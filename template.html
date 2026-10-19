@@ -1,0 +1,1115 @@
+<title>Jerebu Watch</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Malaysia haze outlook: today's Air Pollutant Index, a 3-day forecast for every DOE station, and the Indonesian fires the smoke comes from.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/*__LEAFLET_CSS__*/
+</style>
+<style>
+/* Layout: the Elevate workspace — a 44px app bar over one full-screen map, a frosted-glass side panel
+   on the left holding the five modes, and a quiet command deck (caption, legend, player) on the map.
+   Under 760px the map sits on top, the panel flows below it and the modes become a bottom bar. */
+:root{
+  --background:#ffffff; --card:#ffffff; --muted:#f6f5f8; --foreground:#1f1b2d; --muted-fg:#59566a;
+  --border:rgb(0 0 0/.08); --input:rgb(0 0 0/.15); --accent:color-mix(in srgb,#1f1b2d 6%,#ffffff);
+  --brand:#bd9fff; --brand-hover:#cdb6ff; --brand-fg:#1b1528; --brand-soft:#efe9ff; --ring:#6d4aff;
+  --green:#15803d; --amber:#b45309; --red:#c81e1e; --blue:#2563eb; --magenta:#be185d; --teal:#0f766e; --violet:#6d4aff;
+  /* map layers: literal colours bright enough for both basemaps; the API scale is DOE's official one */
+  --sea:#e7ecf2; --land:#f5f4f2; --land-my:#ffffff; --land-id:#efece8; --coast:rgb(31 27 45/.16); --vignette:rgb(31 27 45/.06);
+  --api-good:#4f97e3; --api-mod:#3faf5b; --api-unh:#f2c12e; --api-vunh:#f0812c; --api-haz:#e5484d; --chip-ink:#1b1528;
+  --fire-new:#ffb000; --fire-mid:#f06a1d; --fire-old:#9d3a22; --plume:#b4532a; --wind:#8a93a8; --back:#2563eb;
+  --float-shadow:0 24px 60px -28px rgba(0,0,0,.45);
+  --font-sans:"Inter",ui-sans-serif,system-ui,"Segoe UI",sans-serif;
+  --font-display:"Newsreader",Georgia,"Times New Roman",serif;
+  --font-mono:"Geist Mono",ui-monospace,Consolas,monospace;
+  --pw:400px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --background:#14111d; --card:#1c1927; --muted:#25212f; --foreground:#fafafa; --muted-fg:#b3b0bf;
+  --border:rgb(255 255 255/.1); --input:rgb(255 255 255/.2); --accent:color-mix(in srgb,#fafafa 8%,#1c1927);
+  --brand-soft:#2a2140; --ring:#bd9fff;
+  --green:#3ddc84; --amber:#ffb224; --red:#ff6b78; --blue:#6aa6ff; --magenta:#ff5cb3; --teal:#19e6c1; --violet:#b79bff;
+  --sea:#121723; --land:#1e1c22; --land-my:#2a2732; --land-id:#222026; --coast:rgb(255 255 255/.12); --vignette:rgb(0 0 0/.45);
+  --fire-old:#c0502e; --plume:#ffa66e; --wind:#6f7890; --back:#6aa6ff; --float-shadow:0 24px 60px -28px rgba(0,0,0,.9);
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --background:#14111d; --card:#1c1927; --muted:#25212f; --foreground:#fafafa; --muted-fg:#b3b0bf;
+  --border:rgb(255 255 255/.1); --input:rgb(255 255 255/.2); --accent:color-mix(in srgb,#fafafa 8%,#1c1927);
+  --brand-soft:#2a2140; --ring:#bd9fff;
+  --green:#3ddc84; --amber:#ffb224; --red:#ff6b78; --blue:#6aa6ff; --magenta:#ff5cb3; --teal:#19e6c1; --violet:#b79bff;
+  --sea:#121723; --land:#1e1c22; --land-my:#2a2732; --land-id:#222026; --coast:rgb(255 255 255/.12); --vignette:rgb(0 0 0/.45);
+  --fire-old:#c0502e; --plume:#ffa66e; --wind:#6f7890; --back:#6aa6ff; --float-shadow:0 24px 60px -28px rgba(0,0,0,.9);
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--background);color:var(--foreground);font:14px/1.5 var(--font-sans);-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:1000;background:var(--background)}
+h1,h2,h3,p{margin:0}
+h1,h2,h3{font-weight:500;letter-spacing:-.025em}
+button,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+a{color:var(--violet)}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted-fg)}
+svg.i{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- app bar */
+.app{height:100%;display:grid;grid-template-rows:44px minmax(0,1fr)}
+.bar{position:relative;z-index:900;display:flex;align-items:center;gap:8px;background:var(--background);border-bottom:1px solid var(--border);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wordmark{display:inline-flex;align-items:center;gap:.36em;font:500 19px/1 var(--font-display);letter-spacing:-.03em;white-space:nowrap}
+.wordmark svg{width:.92em;height:.92em}
+.tag{border-radius:4px;background:var(--brand);color:var(--brand-fg);font-size:10px;line-height:1;font-weight:500;padding:3px 6px;white-space:nowrap}
+.bar .ctx{font-size:12.5px;color:var(--muted-fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;margin-left:6px}
+.bar .spacer{flex:1}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--border);
+  background:var(--background);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;text-decoration:none;color:var(--foreground)}
+.btn:hover{background:var(--muted)}
+.btn.sm{height:28px;padding:0 10px;font-size:12.5px}
+.btn.brand{background:var(--brand);border-color:transparent;color:var(--brand-fg)}
+.btn.brand:hover{background:var(--brand-hover)}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.ghost:hover{background:var(--accent)}
+.btn.icon{width:32px;padding:0}
+
+/* ---------- workspace */
+.ws{position:relative;min-height:0;overflow:hidden}
+.stage{position:absolute;inset:0}
+#map{position:absolute;inset:0;z-index:0;background:var(--sea)}   /* own stacking context: keeps Leaflet's panes under the deck */
+.vignette{position:absolute;inset:0;z-index:420;pointer-events:none;background:radial-gradient(120% 90% at 62% 50%,transparent 55%,var(--vignette))}
+#three{position:absolute;top:0;bottom:0;right:0;left:var(--pw);z-index:430;background:var(--sea)}
+
+.panel{position:absolute;z-index:600;top:0;left:0;bottom:0;width:min(var(--pw),calc(100% - 40px));display:flex;flex-direction:column;
+  background:color-mix(in srgb,var(--background) 72%,transparent);-webkit-backdrop-filter:blur(8px) saturate(1.3);backdrop-filter:blur(8px) saturate(1.3);
+  border-right:1px solid var(--border);padding-left:env(safe-area-inset-left,0px)}
+.modes{display:flex;gap:2px;margin:12px 12px 6px;padding:3px;border-radius:999px;background:var(--muted);border:1px solid var(--border)}
+.mode{flex:1;min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:5px;height:30px;border:0;background:none;border-radius:999px;
+  font-size:12.5px;font-weight:500;color:var(--muted-fg);cursor:pointer;white-space:nowrap}
+.mode svg.i{display:none}
+.mode:hover{color:var(--foreground)}
+.mode[aria-selected="true"]{background:var(--background);color:var(--foreground);box-shadow:0 1px 2px rgb(0 0 0/.08),0 0 0 1px var(--border)}
+.pbody{flex:1;min-height:0;overflow:auto;padding:6px 12px 18px;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin}
+
+/* ---------- panel content */
+.lead .meta{font-size:11.5px;color:var(--muted-fg)}
+.lead .big{font:400 64px/1 var(--font-display);letter-spacing:-.035em;margin-top:6px}
+.lead .big.sm{font-size:48px}
+.lead .sub{font-size:17px;font-weight:500;letter-spacing:-.02em;line-height:1.3;margin-top:6px;text-wrap:balance}
+.card{border-radius:14px;border:1px solid var(--border);background:var(--card);padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.card-h{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:500;letter-spacing:-.01em}
+.card-h .grow{flex:1;min-width:0}
+.card-h small{display:block;font-size:11px;font-weight:400;color:var(--muted-fg);letter-spacing:0}
+.itile{display:grid;place-items:center;width:28px;height:28px;border-radius:10px;flex:none}
+.itile svg.i{width:14px;height:14px}
+.h-blue{background:color-mix(in srgb,var(--blue) 15%,transparent);color:var(--blue)}
+.h-amber{background:color-mix(in srgb,var(--amber) 15%,transparent);color:var(--amber)}
+.h-red{background:color-mix(in srgb,var(--red) 15%,transparent);color:var(--red)}
+.h-violet{background:color-mix(in srgb,var(--violet) 15%,transparent);color:var(--violet)}
+.h-green{background:color-mix(in srgb,var(--green) 15%,transparent);color:var(--green)}
+.body{font-size:13px;line-height:1.6}
+.note{font-size:11.5px;line-height:1.5;color:var(--muted-fg)}
+.chip{display:inline-flex;align-items:center;gap:5px;border-radius:999px;border:1px solid;padding:0 8px;height:20px;font-size:10.5px;font-weight:500;white-space:nowrap}
+.chip.violet{border-color:color-mix(in srgb,var(--violet) 30%,transparent);background:color-mix(in srgb,var(--violet) 10%,transparent);color:var(--violet)}
+.chip.api{border-color:var(--border);background:var(--card);color:var(--foreground)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;flex:none}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.stat{min-width:0;border-radius:14px;border:1px solid var(--border);background:color-mix(in srgb,var(--foreground) 2%,transparent);padding:7px 10px}
+.stat .k{font-size:11px;color:var(--muted-fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat .v{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.25}
+.stat .s{font-size:10.5px;color:var(--muted-fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat .bar{display:flex;height:4px;border-radius:2px;overflow:hidden;margin-top:6px;background:var(--border)}
+.stat .bar i{display:block;height:100%}
+.callout{border-radius:14px;border:1px solid;padding:10px 12px;font-size:12.5px;line-height:1.55}
+.callout.amber{border-color:color-mix(in srgb,var(--amber) 30%,transparent);background:color-mix(in srgb,var(--amber) 10%,transparent)}
+.callout.red{border-color:color-mix(in srgb,var(--red) 40%,transparent);background:color-mix(in srgb,var(--red) 10%,transparent)}
+.callout.info{border-color:var(--border);background:color-mix(in srgb,var(--foreground) 2%,transparent)}
+.callout .ct{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;margin-bottom:4px}
+.callout.amber .ct svg{color:var(--amber)} .callout.red .ct svg{color:var(--red)} .callout.info .ct svg{color:var(--green)}
+.callout ul{margin:6px 0 0;padding-left:18px}
+.callout li{margin:1px 0}
+.tbl{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--card)}
+.tbl table{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl th{background:color-mix(in srgb,var(--muted) 60%,transparent);color:var(--muted-fg);font-weight:500;font-size:11.5px;text-align:left;padding:7px 10px}
+.tbl td{padding:7px 10px;border-top:1px solid var(--border);vertical-align:middle}
+.tbl .r{text-align:right}
+.tbl tbody tr{cursor:pointer}
+.tbl tbody tr:hover{background:var(--accent)}
+.tbl td small{display:block;color:var(--muted-fg);font-size:11px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.field{position:relative}
+.field select{width:100%;height:36px;border-radius:999px;border:1px solid var(--input);background:var(--background);padding:0 34px 0 14px;font-size:13px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.field svg.i{position:absolute;right:12px;bottom:10px;width:16px;height:16px;pointer-events:none;color:var(--muted-fg)}
+.reading{display:flex;align-items:flex-end;gap:12px}
+.reading .v{font-size:52px;line-height:.9;font-weight:600;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.gauge{position:relative;padding-top:4px}
+.gauge .scale{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;height:6px;border-radius:3px;overflow:hidden}
+.gauge .pin{position:absolute;top:0;width:3px;height:14px;border-radius:2px;background:var(--foreground);transform:translateX(-50%);box-shadow:0 0 0 2px var(--card)}
+.gauge .lbl{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin-top:5px;font-size:10px;color:var(--muted-fg);line-height:1.25}
+.gauge .lbl b{display:block;font-weight:500;color:var(--foreground);font-size:10.5px}
+.srcs{display:flex;flex-direction:column;gap:9px}
+.src .t{display:flex;justify-content:space-between;gap:8px;font-size:12.5px}
+.src .t b{font-weight:500}
+.src .track{height:4px;border-radius:2px;background:var(--border);margin-top:4px;overflow:hidden}
+.src .track i{display:block;height:100%;border-radius:2px;background:var(--violet)}
+.src .w{font-size:11px;color:var(--muted-fg);margin-top:2px}
+.src.click{cursor:pointer}
+.src.click:hover b{color:var(--violet)}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;cursor:pointer}
+.switch input{appearance:none;-webkit-appearance:none;width:34px;height:20px;border-radius:999px;background:var(--input);position:relative;cursor:pointer;flex:none;transition:background .15s;margin:0}
+.switch input::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--background);transition:left .15s}
+.switch input:checked{background:var(--violet)}
+.switch input:checked::after{left:16px}
+.flist button{display:grid;grid-template-columns:1fr auto;gap:0 8px;width:100%;text-align:left;border:0;background:none;padding:7px 12px;border-top:1px solid var(--border);cursor:pointer}
+.flist button:first-child{border-top:0}
+.flist button:hover{background:var(--accent)}
+.flist button[aria-current="true"]{background:var(--brand-soft)}
+.flist .n{font-size:12.5px;font-weight:500}
+.flist .m{grid-column:1/-1;font-size:11px;color:var(--muted-fg)}
+.flist .x{font:500 10px/1.8 var(--font-mono);color:var(--violet)}
+
+/* ---------- charts (hand-drawn SVG) */
+.chartwrap{position:relative}
+svg.chart{display:block;width:100%;height:auto;overflow:visible}
+svg.chart .grid{stroke:var(--border);stroke-width:.6}
+svg.chart text{fill:var(--muted-fg);font:9px var(--font-sans)}
+svg.chart .yl{text-anchor:end}
+svg.chart .xl{text-anchor:middle}
+svg.chart .thr{stroke:var(--amber);stroke-width:1;stroke-dasharray:3 3}
+svg.chart text.thl{fill:var(--amber);text-anchor:end}
+svg.chart .now{stroke:var(--muted-fg);stroke-width:1;stroke-dasharray:2 3}
+.ctip{position:absolute;pointer-events:none;background:var(--background);border:1px solid var(--border);border-radius:10px;padding:5px 8px;font-size:11px;box-shadow:var(--float-shadow);white-space:nowrap;z-index:5}
+.ctip b{font-weight:600;font-variant-numeric:tabular-nums}
+.legend-row{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px;color:var(--muted-fg)}
+.legend-row span{display:inline-flex;align-items:center;gap:5px}
+.legend-row .ln{width:14px;height:0;border-top:2px solid}
+.legend-row .ln.d{border-top-style:dashed}
+
+/* ---------- command deck */
+.caption{position:absolute;z-index:450;top:16px;left:calc(var(--pw) + 22px);pointer-events:none;max-width:calc(100% - var(--pw) - 200px);
+  text-shadow:0 0 2px var(--sea),0 0 4px var(--sea),0 0 8px var(--sea)}
+.caption .e{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted-fg)}
+.caption .rg{font:400 clamp(1.6rem,2.6vw,2.4rem)/1 var(--font-display);letter-spacing:-.03em;margin:5px 0 6px}
+.caption .m{font-size:12px;color:var(--muted-fg)}
+.float{border-radius:18px;border:1px solid var(--border);background:color-mix(in srgb,var(--background) 95%,transparent);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:var(--float-shadow)}
+.legend{position:absolute;z-index:450;left:calc(var(--pw) + 16px);bottom:28px;width:300px;padding:10px 12px}
+.ws.has-player .legend{bottom:104px}
+.legend .t{font-size:12px;font-weight:500;margin-bottom:6px}
+.legend .scale{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;height:6px;border-radius:3px;overflow:hidden}
+.legend .lbl{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin-top:5px;font-size:10px;color:var(--muted-fg);line-height:1.25}
+.legend .lbl b{display:block;color:var(--foreground);font-weight:500;font-size:10.5px}
+.legend .extra{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:8px;font-size:11px;color:var(--muted-fg)}
+.legend .extra span{display:inline-flex;align-items:center;gap:5px}
+.legend .ln{width:14px;border-top:2px solid var(--plume)}
+.player{position:absolute;z-index:460;left:calc(var(--pw) + 16px);right:16px;bottom:28px;display:flex;align-items:center;gap:12px;padding:8px 14px 8px 8px}
+.player .play{width:40px;height:40px;padding:0;border-radius:999px;flex:none}
+.player .track{flex:1;min-width:0}
+.player input[type=range]{width:100%;accent-color:var(--violet);margin:0}
+.player .ticks{display:flex;justify-content:space-between;font:400 10px/1 var(--font-mono);color:var(--muted-fg);margin-top:3px}
+.player .when{text-align:right;font-size:12.5px;font-weight:500;min-width:140px;line-height:1.35}
+.player .when small{display:block;font-weight:400;font-size:11px;color:var(--muted-fg)}
+.seg3d{position:absolute;z-index:470;top:14px;right:58px;display:flex;padding:3px;gap:2px;border-radius:999px}
+.ws.story .seg3d{right:16px}
+.ws.story .panel{background:color-mix(in srgb,var(--background) 94%,transparent)}
+.seg3d button{height:28px;padding:0 12px;border:0;border-radius:999px;background:none;font-size:12.5px;font-weight:500;color:var(--muted-fg);cursor:pointer}
+.seg3d button[aria-pressed="true"]{background:var(--foreground);color:var(--background)}
+.seg3d button:disabled{opacity:.4;cursor:default}
+/* 3D story: always the night palette, like Elevate's cinematic dark bands */
+#story{position:absolute;inset:0;z-index:430;background:#0b0a12;overflow:hidden;touch-action:none}
+#story canvas{display:block;width:100%;height:100%}
+.stage.night{--background:#14111d;--card:#1c1927;--muted:#25212f;--foreground:#fafafa;--muted-fg:#b3b0bf;--border:rgb(255 255 255/.1);--input:rgb(255 255 255/.2);
+  --accent:color-mix(in srgb,#fafafa 8%,#1c1927);--violet:#b79bff;--amber:#ffb224;--sea:#0b0a12;--plume:#d9c2a8;--float-shadow:0 24px 60px -28px rgba(0,0,0,.9);color:var(--foreground)}
+.stage.night .caption{text-shadow:0 1px 2px #000,0 0 10px rgb(0 0 0/.7)}
+.slbl{position:absolute;left:0;top:0;pointer-events:none;white-space:nowrap;font:500 11px/1.2 var(--font-sans);color:rgb(250 250 250/.82);
+  text-shadow:0 1px 2px #000,0 0 8px #000;will-change:transform}
+.slbl.fire{color:#ffbf80}
+.slbl.st{color:#fafafa;font-size:11.5px}
+.slbl.st b{font-weight:600;font-variant-numeric:tabular-nums;margin-left:4px}
+.slbl .d{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:0}
+.story-hint{position:absolute;right:18px;top:62px;z-index:2;font-size:11px;color:rgb(250 250 250/.6);pointer-events:none}
+
+/* leaflet, in the house style */
+.leaflet-container{background:var(--sea);font-family:var(--font-sans)}
+.leaflet-bar{border:1px solid var(--border)!important;border-radius:999px!important;overflow:hidden;box-shadow:var(--float-shadow)!important}
+.leaflet-bar a{background:var(--background)!important;color:var(--foreground)!important;border-color:var(--border)!important;width:32px!important;height:32px!important;line-height:32px!important}
+.leaflet-bar a:hover{background:var(--muted)!important}
+.leaflet-control-attribution{background:color-mix(in srgb,var(--background) 80%,transparent)!important;color:var(--muted-fg)!important;font-size:10px!important}
+.leaflet-tooltip{background:var(--background);color:var(--foreground);border:1px solid var(--border);border-radius:10px;font:12px/1.45 var(--font-sans);box-shadow:var(--float-shadow);padding:5px 9px}
+.leaflet-tooltip-top:before{border-top-color:var(--background)}
+.stn-icon{background:none;border:0}
+.stn{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;font:600 9.5px/1 var(--font-sans);color:var(--chip-ink);font-variant-numeric:tabular-nums;
+  box-shadow:0 0 0 2px var(--background),0 1px 4px rgb(0 0 0/.35);cursor:pointer}
+.stn-icon.sel{z-index:1000!important}
+.stn-icon.sel .stn{box-shadow:0 0 0 2px var(--background),0 0 0 4px var(--violet),0 2px 6px rgb(0 0 0/.4);transform:scale(1.15)}
+.plabel{background:none;border:0;font:500 11px/1 var(--font-sans);color:var(--muted-fg);white-space:nowrap;text-shadow:0 0 3px var(--sea),0 0 3px var(--sea),0 0 3px var(--sea)}
+.plabel.country{font:400 13px/1 var(--font-display);letter-spacing:.3em;text-transform:uppercase;color:color-mix(in srgb,var(--muted-fg) 70%,transparent)}
+
+.toast{position:fixed;left:50%;top:56px;transform:translateX(-50%);z-index:2000;background:var(--foreground);color:var(--background);border-radius:999px;padding:8px 14px;font-size:12.5px;font-weight:500;box-shadow:var(--float-shadow);max-width:calc(100% - 32px)}
+.about p{font-size:13px;line-height:1.6}
+.about ul{margin:0;padding-left:18px;font-size:13px;line-height:1.6}
+.cat-row{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:start;padding:7px 0;border-top:1px solid var(--border);font-size:12.5px}
+.cat-row:first-child{border-top:0}
+pre.sum{white-space:pre-wrap;margin:0;font:12px/1.55 var(--font-mono);background:var(--muted);border:1px solid var(--border);border-radius:14px;padding:10px 12px}
+
+@media (max-width:1180px){.bar .ctx{display:none}}
+@media (max-width:1020px){.caption{display:none}.legend{width:260px}
+  .stage.night .caption{display:block;left:14px;top:12px;max-width:calc(100% - 28px)}.stage.night .caption .rg{font-size:1.4rem}.story-hint{display:none}}
+@media (max-width:760px){
+  :root{--pw:0px}
+  .seg3d,.ws.story .seg3d{right:10px;top:10px}
+  .stage.night .caption{top:56px}
+  html,body{height:auto}
+  .app{display:block;height:auto;padding-bottom:calc(64px + env(safe-area-inset-bottom,0px))}
+  .bar{position:sticky;top:env(safe-area-inset-top,0px);height:48px}
+  .bar .lbl-long{display:none}
+  .ws{overflow:visible}
+  .stage{position:relative;height:56vh;min-height:340px}
+  #three{left:0}
+  .panel{position:static;width:auto;background:var(--background);-webkit-backdrop-filter:none;backdrop-filter:none;border-right:0;border-top:1px solid var(--border);padding-left:0}
+  .modes{position:fixed;z-index:950;left:0;right:0;bottom:0;margin:0;border-radius:0;border:0;border-top:1px solid var(--border);background:var(--background);
+    padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+  .mode{flex-direction:column;gap:2px;height:46px;font-size:10.5px;border-radius:12px}
+  .mode svg.i{display:block;width:19px;height:19px}
+  .mode[aria-selected="true"]{box-shadow:none;background:var(--brand-soft)}
+  .pbody{overflow:visible;padding:14px max(16px,env(safe-area-inset-right,0px)) 20px max(16px,env(safe-area-inset-left,0px))}
+  .legend{display:none}
+  .player{left:10px;right:10px;bottom:10px;padding:6px 10px 6px 6px;gap:8px}
+  .player .when{min-width:0;font-size:11.5px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+
+<div class="app">
+  <header class="bar">
+    <span class="wordmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="10" r="6.2"/><path d="M2.5 14.6h19M5 18.6h14M8 22.4h8"/></svg>Jerebu Watch</span>
+    <span class="tag" data-i="unofficial_tag"></span>
+    <span class="ctx" id="barCtx"></span>
+    <span class="spacer"></span>
+    <button class="btn ghost sm" id="langBtn"><svg class="i" viewBox="0 0 24 24"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg><span class="lbl"></span></button>
+    <button class="btn ghost icon" id="themeBtn"></button>
+    <button class="btn sm" id="shareBtn"><svg class="i" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><span class="lbl-long" data-i="share"></span></button>
+  </header>
+
+  <div class="ws" id="ws">
+    <div class="stage" id="stage">
+      <div id="map"></div>
+      <div class="vignette"></div>
+      <div id="three" hidden></div>
+      <div id="story" hidden><div class="story-hint" id="storyHint"></div></div>
+      <div class="caption" id="caption"><div class="e" id="capE"></div><div class="rg" id="capR"></div><div class="m" id="capM"></div></div>
+      <div class="seg3d float" id="seg3d" hidden><button id="v3d" aria-pressed="false"></button><button id="vMap" aria-pressed="true"></button></div>
+      <div class="legend float" id="legend"></div>
+      <div class="player float" id="player" hidden>
+        <button class="btn brand play" id="playBtn" aria-label="Play"></button>
+        <div class="track"><input type="range" id="slider" min="0" max="1000" value="0" aria-label="Time"><div class="ticks" id="ticks"></div></div>
+        <div class="when" id="when"></div>
+      </div>
+    </div>
+    <aside class="panel">
+      <nav class="modes" role="tablist">
+        <button class="mode" role="tab" data-v="today"><svg class="i" viewBox="0 0 24 24"><path d="m5.2 6.2 1.4 1.4"/><path d="M2 13h2"/><path d="M20 13h2"/><path d="m17.4 7.6 1.4-1.4"/><path d="M22 17H2"/><path d="M22 21H2"/><path d="M16 13a4 4 0 0 0-8 0"/><path d="M12 5V2.5"/></svg><span data-i="m_today"></span></button>
+        <button class="mode" role="tab" data-v="area"><svg class="i" viewBox="0 0 24 24"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg><span data-i="m_area"></span></button>
+        <button class="mode" role="tab" data-v="smoke"><svg class="i" viewBox="0 0 24 24"><path d="M12.8 19.6A2 2 0 1 0 14 16H2"/><path d="M17.5 8a2.5 2.5 0 1 1 2 4H2"/><path d="M9.8 4.4A2 2 0 1 1 11 8H2"/></svg><span data-i="m_smoke"></span></button>
+        <button class="mode" role="tab" data-v="fires"><svg class="i" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg><span data-i="m_fires"></span></button>
+        <button class="mode" role="tab" data-v="about"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span data-i="m_about"></span></button>
+      </nav>
+      <div class="pbody" id="pbody" role="tabpanel"></div>
+    </aside>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const D=/*__DATA__*/null;
+const H=D.haze, HR=3600;
+
+// ======================================================= words
+const I18N={
+en:{
+ unofficial_tag:'Unofficial',share:'Copy summary',copied:'Summary copied. Paste it into your post.',copy_fail:'Copying was blocked. The summary is selected under About.',
+ m_today:'Today',m_area:'Your area',m_smoke:'Smoke',m_fires:'Fires',m_about:'About',
+ bar_ctx:s=>`DOE reading · ${s} MYT`,theme_dark:'Use dark theme',theme_light:'Use light theme',
+ deck_e:'Haze watch',reg_today:'Malaysia',reg_smoke:'Sumatra to Borneo',reg_fires:'Indonesia',
+ deck_doe:s=>`DOE reading ${s} MYT · Unofficial forecast`,deck_fire:s=>`NASA FIRMS · latest satellite pass ${s} MYT`,
+ api_name:'Air Pollutant Index (API)',cat:['Good','Moderate','Unhealthy','Very unhealthy','Hazardous'],
+ lg_plume:'Smoke path',lg_fire:'Active fire area',lg_back:'Where the air here came from',age:['Last 12 h','12–48 h ago','Older, burnt area'],
+ reading:s=>`DOE reading · ${s} MYT`,
+ hero_sub:(n,tot)=>`of ${tot} areas in Malaysia have unhealthy air right now`,hero_ok:'Air is good to moderate across Malaysia right now',
+ brief:'Briefing',brief_ai:'AI · DeepSeek',brief_ai_note:'Written by DeepSeek from the numbers on this page. Check DOE APIMS for official readings.',
+ lede_worst:l=>`Worst now: ${l}.`,
+ lede_up:r=>`Over the next 3 days the haze is expected to get worse${r?`, especially in ${r}`:''}.`,
+ lede_flat:r=>`Over the next 3 days the haze is expected to stay about the same${r?`, heaviest in ${r}`:''}.`,
+ lede_down:r=>`Over the next 3 days the haze is expected to ease${r?`, though ${r} stay worst`:''}.`,
+ lede_src:p=>`Most of the smoke comes from fires in ${p}, Indonesia.`,
+ next3:'Next 3 days',next3_sub:'Areas expected to reach unhealthy (API above 100)',today:'Today',tomorrow:'Tomorrow',areas:'areas',
+ todo:'What to do',todo_src:'Advice from DOE Malaysia',
+ adv:['Air is clean. Outdoor activities are fine.','Outdoor activities are fine for most people.',
+  'Cut down long outdoor activities. If you have asthma, heart or breathing problems, stay indoors and exercise inside.',
+  'Avoid outdoor activities. Stay indoors unless you really need to go out.','Stay indoors and follow instructions from the authorities.'],
+ tips:['Wear a face mask when outside','Keep windows and doors closed','Drink plenty of water','See a doctor if asthma, coughing or eye irritation gets worse','No open burning. Report fires to 999'],
+ worst:'Worst air right now',th_api:'API',
+ cta_area:'Check your area',cta_smoke:'Watch the smoke forecast',
+ off_note:'This is not an official forecast. For official readings, see DOE Malaysia APIMS at',
+ pick:'Station',trend_up:'Expected to get worse tomorrow',trend_flat:'About the same tomorrow',trend_down:'Expected to improve tomorrow',
+ here3:'Next 3 days here',peak:'Expected peak each day',
+ chart_t:'Past week and next 3 days',chart_sub:'Hourly API at this station',obs:'DOE reading',fc:'Forecast',thr:'Unhealthy',thr2:'Very unhealthy',now:'Now',
+ chart_src:'Readings: DOE APIMS. Forecast: latest reading blended with Copernicus CAMS, tuned to this station.',
+ src_t:'Where the haze comes from',src_sub_f:'Smoke forecast to reach this station, next 72 h',src_sub_b:'Fires the air passed over, last 48 h',
+ src_fwd:(a,p)=>`Most smoke expected over ${a} in the next 3 days comes from fires near ${p}.`,
+ src_back:(a,p)=>`Air reaching ${a} today passed over fires near ${p} in the last 2 days.`,
+ src_none:a=>`No large smoke plume is forecast to pass over ${a}. The haze here is older smoke spread across the region.`,
+ near:'near',
+ smoke_meta:'Smoke forecast · next 72 h',smoke_h:'Where the smoke from Indonesia is heading',
+ smoke_p:'Each line is smoke drifting with the forecast wind from a fire area in Indonesia. The town circles show the air quality expected at the time on the player.',
+ wind:'Show wind',wind_s:'Arrows at about 750 m above ground',
+ pri_t:'Fires sending the most smoke to Malaysia',pri_sub:'Share of forecast smoke reaching DOE stations, next 72 h',
+ pri_note:'Putting out these fires would help Malaysia most. Select one to see it on the Fires map.',
+ cav_t:'How far to trust this',smoke_cav:'Smoke paths follow the wind forecast only. Rain, smoke height and spreading are not modelled, so treat them as a guide.',
+ ago:h=>`${h} h ago`,ahead:h=>`In ${h} h`,
+ fires_meta:'NASA satellites · last 7 days',fires_sub:'fire hotspots seen in Indonesia in the last 24 hours',
+ k7:'Last 7 days',kAreas:'Fire areas',kPass:'Latest pass',
+ sel:'Selected fire area',fire_text:(n,a,d)=>`${n} hotspots this week, about ${a} km² burnt so far. Last seen ${d} MYT.`,
+ burnt:'Burnt area so far',burnt_sub:'km², grows as new hotspots appear',
+ daily:'Hotspots per day',daily_sub:'By island',biggest:'Largest fire areas this week',hotspots:'hotspots',other:'Other',
+ view_map:'Map',view_3d:'3D terrain',no3d:'3D terrain is ready for the 6 largest fire areas.',near_town:(tw,p)=>`Near ${tw}, ${p}`,
+ view_story:'3D story',ch:'Chapter',ch1:'Fires spread across Sumatra and Borneo',ch2:'Haze settles over Malaysia',ch3:'The next 3 days',
+ ch1m:(d,n)=>`${d} · ${n} hotspots so far`,ch2m:(d,n,tot)=>`${d} MYT · ${n} of ${tot} areas unhealthy`,ch3m:(d,n)=>`${d} MYT · forecast · ${n} areas unhealthy`,
+ lg_pillar:'Light pillar: API at a DOE station',lg_ember:'Fire hotspot, brightest in the last 12 h',lg_smoke:'Smoke drifting on the wind',
+ fires_near:tw=>`Fires near ${tw}`,drag:'Drag to look around · scroll to zoom',
+},
+ms:{
+ unofficial_tag:'Tidak rasmi',share:'Salin ringkasan',copied:'Ringkasan disalin. Tampal dalam hantaran anda.',copy_fail:'Salinan disekat. Ringkasan telah dipilih di bahagian Info.',
+ m_today:'Hari ini',m_area:'Kawasan anda',m_smoke:'Asap',m_fires:'Kebakaran',m_about:'Info',
+ bar_ctx:s=>`Bacaan JAS · ${s} MYT`,theme_dark:'Guna tema gelap',theme_light:'Guna tema cerah',
+ deck_e:'Pantau jerebu',reg_today:'Malaysia',reg_smoke:'Sumatera ke Borneo',reg_fires:'Indonesia',
+ deck_doe:s=>`Bacaan JAS ${s} MYT · Ramalan tidak rasmi`,deck_fire:s=>`NASA FIRMS · laluan satelit terkini ${s} MYT`,
+ api_name:'Indeks Pencemar Udara (IPU)',cat:['Baik','Sederhana','Tidak sihat','Sangat tidak sihat','Berbahaya'],
+ lg_plume:'Laluan asap',lg_fire:'Kawasan kebakaran aktif',lg_back:'Dari mana udara di sini datang',age:['12 jam lepas','12–48 jam lalu','Lebih lama, kawasan terbakar'],
+ reading:s=>`Bacaan JAS · ${s} MYT`,
+ hero_sub:(n,tot)=>`daripada ${tot} kawasan di Malaysia mencatat udara tidak sihat sekarang`,hero_ok:'Udara baik hingga sederhana di seluruh Malaysia sekarang',
+ brief:'Ringkasan',brief_ai:'AI · DeepSeek',brief_ai_note:'Ditulis oleh DeepSeek berdasarkan angka di halaman ini. Rujuk APIMS JAS untuk bacaan rasmi.',
+ lede_worst:l=>`Paling teruk sekarang: ${l}.`,
+ lede_up:r=>`Dalam 3 hari akan datang jerebu dijangka bertambah buruk${r?`, terutamanya di ${r}`:''}.`,
+ lede_flat:r=>`Dalam 3 hari akan datang jerebu dijangka kekal di tahap yang sama${r?`, paling teruk di ${r}`:''}.`,
+ lede_down:r=>`Dalam 3 hari akan datang jerebu dijangka berkurang${r?`, namun ${r} kekal paling teruk`:''}.`,
+ lede_src:p=>`Kebanyakan asap datang daripada kebakaran di ${p}, Indonesia.`,
+ next3:'3 hari akan datang',next3_sub:'Kawasan dijangka mencapai tahap tidak sihat (IPU melebihi 100)',today:'Hari ini',tomorrow:'Esok',areas:'kawasan',
+ todo:'Apa perlu dibuat',todo_src:'Nasihat Jabatan Alam Sekitar',
+ adv:['Udara bersih. Sesuai untuk aktiviti luar.','Sesuai untuk aktiviti luar bagi kebanyakan orang.',
+  'Kurangkan aktiviti luar yang lama. Jika anda menghidap asma, sakit jantung atau masalah pernafasan, duduk di dalam dan bersenam di dalam bangunan.',
+  'Elakkan aktiviti luar. Tinggal di dalam rumah jika tiada keperluan mendesak.','Tinggal di dalam rumah dan ikut arahan pihak berkuasa.'],
+ tips:['Pakai pelitup muka apabila di luar','Tutup tingkap dan pintu','Minum banyak air','Dapatkan rawatan jika asma, batuk atau sakit mata bertambah teruk','Jangan buat pembakaran terbuka. Laporkan kebakaran ke 999'],
+ worst:'Udara paling teruk sekarang',th_api:'IPU',
+ cta_area:'Semak kawasan anda',cta_smoke:'Lihat ramalan asap',
+ off_note:'Ini bukan ramalan rasmi. Untuk bacaan rasmi, rujuk APIMS Jabatan Alam Sekitar di',
+ pick:'Stesen',trend_up:'Dijangka bertambah buruk esok',trend_flat:'Lebih kurang sama esok',trend_down:'Dijangka bertambah baik esok',
+ here3:'3 hari akan datang di sini',peak:'Jangkaan tertinggi setiap hari',
+ chart_t:'Seminggu lalu dan 3 hari akan datang',chart_sub:'IPU setiap jam di stesen ini',obs:'Bacaan JAS',fc:'Ramalan',thr:'Tidak sihat',thr2:'Sangat tidak sihat',now:'Kini',
+ chart_src:'Bacaan: APIMS JAS. Ramalan: bacaan terkini digabung dengan Copernicus CAMS, dilaraskan untuk stesen ini.',
+ src_t:'Dari mana datangnya jerebu',src_sub_f:'Asap dijangka sampai ke stesen ini, 72 jam akan datang',src_sub_b:'Kebakaran yang dilalui udara, 48 jam lepas',
+ src_fwd:(a,p)=>`Kebanyakan asap yang dijangka di ${a} dalam 3 hari akan datang datang daripada kebakaran berhampiran ${p}.`,
+ src_back:(a,p)=>`Udara yang sampai ke ${a} hari ini melalui kawasan kebakaran berhampiran ${p} dalam 2 hari lepas.`,
+ src_none:a=>`Tiada kepulan asap besar dijangka melalui ${a}. Jerebu di sini ialah asap lama yang tersebar di rantau ini.`,
+ near:'berhampiran',
+ smoke_meta:'Ramalan asap · 72 jam akan datang',smoke_h:'Ke mana asap dari Indonesia bergerak',
+ smoke_p:'Setiap garis ialah asap yang dibawa ramalan angin dari kawasan kebakaran di Indonesia. Bulatan bandar menunjukkan jangkaan kualiti udara pada masa di pemain.',
+ wind:'Tunjuk angin',wind_s:'Anak panah pada kira-kira 750 m dari tanah',
+ pri_t:'Kebakaran yang paling banyak menghantar asap ke Malaysia',pri_sub:'Bahagian asap yang dijangka sampai ke stesen JAS, 72 jam akan datang',
+ pri_note:'Memadam kebakaran ini paling membantu Malaysia. Pilih satu untuk melihatnya di peta Kebakaran.',
+ cav_t:'Sejauh mana boleh dipercayai',smoke_cav:'Laluan asap hanya mengikut ramalan angin. Hujan, ketinggian dan penyebaran asap tidak dimodelkan, jadi gunakan sebagai panduan.',
+ ago:h=>`${h} jam lalu`,ahead:h=>`Dalam ${h} jam`,
+ fires_meta:'Satelit NASA · 7 hari lepas',fires_sub:'titik panas dikesan di Indonesia dalam 24 jam lepas',
+ k7:'7 hari lepas',kAreas:'Kawasan kebakaran',kPass:'Laluan terkini',
+ sel:'Kawasan kebakaran dipilih',fire_text:(n,a,d)=>`${n} titik panas minggu ini, kira-kira ${a} km² terbakar setakat ini. Terakhir dikesan ${d} MYT.`,
+ burnt:'Kawasan terbakar setakat ini',burnt_sub:'km², bertambah apabila titik panas baharu muncul',
+ daily:'Titik panas sehari',daily_sub:'Mengikut pulau',biggest:'Kawasan kebakaran terbesar minggu ini',hotspots:'titik panas',other:'Lain-lain',
+ view_map:'Peta',view_3d:'Rupa bumi 3D',no3d:'Rupa bumi 3D tersedia untuk 6 kawasan kebakaran terbesar.',near_town:(tw,p)=>`Berhampiran ${tw}, ${p}`,
+ view_story:'Cerita 3D',ch:'Bab',ch1:'Kebakaran merebak di Sumatera dan Borneo',ch2:'Jerebu menyelubungi Malaysia',ch3:'3 hari akan datang',
+ ch1m:(d,n)=>`${d} · ${n} titik panas setakat ini`,ch2m:(d,n,tot)=>`${d} MYT · ${n} daripada ${tot} kawasan tidak sihat`,ch3m:(d,n)=>`${d} MYT · ramalan · ${n} kawasan tidak sihat`,
+ lg_pillar:'Tiang cahaya: IPU di stesen JAS',lg_ember:'Titik panas, paling terang dalam 12 jam lepas',lg_smoke:'Asap dibawa angin',
+ fires_near:tw=>`Kebakaran berhampiran ${tw}`,drag:'Seret untuk melihat sekeliling · tatal untuk zum',
+}};
+let LANG=(()=>{try{const v=localStorage.getItem('jw-lang');if(v==='en'||v==='ms')return v}catch(e){}return /^(ms|id)/i.test(navigator.language||'')?'ms':'en'})();
+const t=(k,...a)=>{const v=I18N[LANG][k];return typeof v==='function'?v(...a):v};
+const loc=()=>LANG==='ms'?'ms-MY':'en-GB';
+const TZ={timeZone:'Asia/Kuala_Lumpur'};
+const fmtN=n=>Math.round(n).toLocaleString(loc());
+const fTime=s=>new Date(s*1000).toLocaleString(loc(),{...TZ,hour:'numeric',minute:'2-digit',hour12:true});
+const fDay=s=>new Date(s*1000).toLocaleDateString(loc(),{...TZ,weekday:'short',day:'numeric',month:'short'});
+const fShort=s=>new Date(s*1000).toLocaleDateString(loc(),{...TZ,day:'numeric',month:'short'});
+const fWeekday=s=>new Date(s*1000).toLocaleDateString(loc(),{...TZ,weekday:'long'});
+const fStamp=s=>`${fDay(s)}, ${fTime(s)}`;
+const prov=pl=>LANG==='ms'?pl[2]:pl[1];
+
+// ======================================================= helpers
+const $=id=>document.getElementById(id);
+const tok=n=>getComputedStyle(document.documentElement).getPropertyValue('--'+n).trim();
+const CATS=[50,100,200,300,1e9],APIV=['api-good','api-mod','api-unh','api-vunh','api-haz'];
+const catOf=a=>CATS.findIndex(c=>a<=c);
+const apiCol=a=>a==null?tok('input'):tok(APIV[catOf(a)]);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function minmax(a){let lo=Infinity,hi=-Infinity;for(const v of a){if(v<lo)lo=v;if(v>hi)hi=v}return[lo,hi]}
+function b64(s){const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u.buffer}
+const listJoin=a=>a.length<2?a.join(''):a.slice(0,-1).join(', ')+(LANG==='ms'?' dan ':' and ')+a.at(-1);
+const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
+const isPhone=()=>innerWidth<=760;
+const I={
+ pin:'<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>',
+ alert:'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+ check:'<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+ spark:'<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>',
+ text:'<path d="M17 6.1H3"/><path d="M21 12.1H3"/><path d="M15.1 18H3"/>',
+ cal:'<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>',
+ chart:'<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/>',
+ flame:'<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
+ wind:'<path d="M12.8 19.6A2 2 0 1 0 14 16H2"/><path d="M17.5 8a2.5 2.5 0 1 1 2 4H2"/><path d="M9.8 4.4A2 2 0 1 1 11 8H2"/>',
+ list:'<path d="M3 12h.01"/><path d="M3 18h.01"/><path d="M3 6h.01"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M8 6h13"/>',
+ chev:'<path d="m6 9 6 6 6-6"/>',
+ sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+ moon:'<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+ play:'<path d="M7 4.5v15l12-7.5z" fill="currentColor" stroke="none"/>',
+ pause:'<rect x="6" y="4.5" width="4" height="15" rx="1" fill="currentColor" stroke="none"/><rect x="14" y="4.5" width="4" height="15" rx="1" fill="currentColor" stroke="none"/>',
+ info:'<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+ share:'<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+};
+const ic=n=>`<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${I[n]}</svg>`;
+const tile=(n,h)=>`<span class="itile h-${h}">${ic(n)}</span>`;
+const cardH=(icon,hue,title,sub,right='')=>`<div class="card-h">${tile(icon,hue)}<div class="grow">${title}${sub?`<small>${sub}</small>`:''}</div>${right}</div>`;
+const apiChip=a=>`<span class="chip api"><span class="dot" style="background:${apiCol(a)}"></span>${a==null?'–':t('cat')[catOf(a)]}</span>`;
+const apiDot=a=>`<span class="num" style="display:inline-flex;align-items:center;gap:6px;font-weight:600"><span class="dot" style="background:${apiCol(a)}"></span>${a??'–'}</span>`;
+
+// complexes and their province grouping
+const cx=Object.fromEntries(D.complexes.map(c=>[c.id,c]));
+function byProvince(list){
+  const m=new Map();
+  for(const [id,f] of list){const c=cx[id];if(!c)continue;const k=c.place[1];
+    const e=m.get(k)||{pl:c.place,f:0,towns:new Map()};e.f+=f;e.towns.set(c.place[0],(e.towns.get(c.place[0])||0)+f);m.set(k,e)}
+  return [...m.values()].sort((a,b)=>b.f-a.f).map(e=>({pl:e.pl,f:e.f,towns:[...e.towns.entries()].sort((a,b)=>b[1]-a[1]).map(x=>x[0])}));
+}
+
+// ======================================================= stations: now and daily peaks
+const T0=H.t_now;
+const dayStart=s=>{const d=new Date((s+8*HR)*1000);d.setUTCHours(0,0,0,0);return d.getTime()/1000-8*HR};
+const DAY0=dayStart(T0);
+H.stations.forEach(s=>{
+  s.obsMap=new Map(s.obs);
+  s.fcMap=new Map((s.fc?s.fc.series:[]).filter(r=>r[0]>T0).map(r=>[r[0],r[2]]));
+  s.now=s.obsMap.get(T0)??s.api;
+  s.days=[0,1,2].map(k=>{const a=DAY0+k*86400,b=a+86400;let pk=null;
+    for(const [x,v] of s.obsMap)if(x>=a&&x<b&&x<=T0&&(pk==null||v>pk))pk=v;
+    for(const [x,v] of s.fcMap)if(x>=a&&x<b&&(pk==null||v>pk))pk=v;
+    return {start:a,peak:pk}});
+  let p=null;for(const [x,v] of s.fcMap)if(x<=T0+72*HR&&(p==null||v>p))p=v;s.pk72=p;
+});
+const ST=H.stations;
+const stateOf=s=>s.state.replace(/^WP /,'W.P. ');
+function apiAt(s,x){if(x<=T0){for(let k=0;k<6;k++){const v=s.obsMap.get(x-k*HR);if(v!=null)return v}return null}return s.fcMap.get(x)??null}
+function nationModel(){
+  const unh=ST.filter(s=>s.now>100),worst=[...ST].sort((a,b)=>(b.now||0)-(a.now||0));
+  const days=[0,1,2].map(k=>{const c=[0,0,0,0,0];ST.forEach(s=>{const p=s.days[k].peak;if(p!=null)c[catOf(p)]++});return c});
+  const mNow=ST.reduce((a,s)=>a+(s.now||0),0)/ST.length,mD2=ST.reduce((a,s)=>a+(s.days[2].peak??s.now??0),0)/ST.length;
+  const trend=mD2-mNow>10?'up':mD2-mNow<-10?'down':'flat';
+  const st=new Map();ST.forEach(s=>{const v=Math.max(s.pk72||0,s.now||0);st.set(stateOf(s),Math.max(st.get(stateOf(s))||0,v))});
+  const topStates=[...st.entries()].filter(e=>e[1]>100).sort((a,b)=>b[1]-a[1]).slice(0,2).map(e=>e[0]);
+  return {unh,worst,days,trend,topStates,provs:byProvince(H.priority).slice(0,3)};
+}
+const unhOf=c=>c[2]+c[3]+c[4];
+
+// ======================================================= map (coastlines are embedded, so no tile server)
+const map=L.map('map',{zoomControl:false,preferCanvas:true,zoomSnap:.25});
+L.control.zoom({position:'topright'}).addTo(map);
+map.attributionControl.setPrefix(false).addAttribution('NASA FIRMS · DOE Malaysia · Copernicus CAMS · Natural Earth');
+map.fitBounds([[-0.6,99.3],[7.3,119.4]]);
+const rend=L.canvas({padding:.4});
+const landPolys=D.land.map(p=>L.polygon(p.p,{renderer:rend,interactive:false,weight:.8}).addTo(map));
+function restyleLand(){const k={my:tok('land-my'),id:tok('land-id'),x:tok('land')},c=tok('coast');landPolys.forEach((pl,i)=>pl.setStyle({fillColor:k[D.land[i].k],fillOpacity:1,color:c}))}
+restyleLand();
+[['Malaysia',4.75,102.25,1],['Indonesia',-1.35,102.5,1],['Kuala Lumpur',3.14,101.95],['Johor Bahru',1.62,103.95],['Kuching',1.2,110.45],['Kota Kinabalu',5.75,116.3],
+ ['Pekanbaru',0.5,101.6],['Jambi',-1.6,103.75],['Palembang',-3.0,104.9],['Pontianak',-0.05,109.5],['Palangka Raya',-2.2,114.1],['Medan',3.6,98.8]]
+ .forEach(([n,la,lo,c])=>L.marker([la,lo],{interactive:false,keyboard:false,icon:L.divIcon({className:'plabel'+(c?' country':''),html:n,iconSize:null})}).addTo(map));
+
+// stations
+const stLayer=L.layerGroup().addTo(map),stMk=new Map();let selSt=null;
+ST.forEach(s=>{const m=L.marker([s.lat,s.lon],{icon:L.divIcon({className:'stn-icon',html:'<div class="stn"></div>',iconSize:[24,24]}),keyboard:false,riseOnHover:true})
+  .bindTooltip(()=>`<span style="font-weight:500">${esc(s.area)}</span> · ${esc(stateOf(s))}<br>${t('th_api')} ${s.now??'–'} · ${t('cat')[catOf(s.now??0)]}`,{direction:'top',offset:[0,-12]})
+  .on('click',()=>{selectStation(s);setMode('area')});stLayer.addLayer(m);stMk.set(s.id,m)});
+let stFn=s=>s.now;
+function paintStations(fn){if(fn)stFn=fn;ST.forEach(s=>{const el=stMk.get(s.id).getElement();if(!el)return;const a=stFn(s),d=el.firstChild;
+  d.style.background=apiCol(a);d.textContent=a??'–';el.classList.toggle('sel',selSt===s&&mode==='area')})}
+map.on('zoomend moveend',()=>paintStations());
+
+// smoke layers
+const srcLayer=L.layerGroup(),plumeLayer=L.layerGroup(),windLayer=L.layerGroup(),backLayer=L.layerGroup();
+const wmax=minmax(H.sources.map(s=>s.w))[1];
+const srcMk=H.sources.map(s=>L.circleMarker([s.lat,s.lon],{renderer:rend,radius:4+11*Math.sqrt(s.w/wmax),weight:0,fillOpacity:.4})
+  .bindTooltip(()=>t('near_town',s.place[0],prov(s.place))).addTo(srcLayer));
+const plumes=H.plumes.map(p=>{const l=L.polyline([],{renderer:rend,weight:p.lvl===925?2.2:1.3,opacity:.85,interactive:false,lineCap:'round'});plumeLayer.addLayer(l);return [p,l]});
+const arrows=[];
+H.arrows.lat.forEach(la=>H.arrows.lon.forEach(lo=>{const p=L.polyline([[la,lo],[la,lo]],{renderer:rend,weight:1.2,opacity:.7,interactive:false});windLayer.addLayer(p);arrows.push([la,lo,p])}));
+
+// fire layer, drawn per tile from the packed detections
+let F=null,fT=0,fireLayer=null;const tiles=new Set();
+function decodeFires(){
+  const f=D.fires,la=new Uint16Array(b64(f.lat)),lo=new Uint16Array(b64(f.lon)),dt=new Uint16Array(b64(f.dt)),fr=new Uint8Array(b64(f.frp));
+  const N=f.n,lat=new Float32Array(N),lon=new Float32Array(N),tm=new Float64Array(N),rad=new Float32Array(N),wx=new Float64Array(N),wy=new Float64Array(N);
+  for(let i=0;i<N;i++){lat[i]=la[i]*.0005-12;lon[i]=lo[i]*.001+94;tm[i]=f.t0+dt[i]*300;rad[i]=Math.min(1.5+(fr[i]/8)/3.5,6);
+    const s=Math.sin(lat[i]*Math.PI/180);wx[i]=(lon[i]+180)/360*256;wy[i]=(.5-Math.log((1+s)/(1-s))/(4*Math.PI))*256}
+  return {N,lat,lon,tm,rad,wx,wy,t0:tm[0],t1:tm[N-1]};
+}
+function drawTile(cv){
+  const ctx=cv.getContext('2d'),{x,y,z}=cv._c,k=2**z,ox=x*256,oy=y*256;ctx.clearRect(0,0,256,256);
+  const bins=[new Path2D(),new Path2D(),new Path2D()];
+  for(let i=0;i<F.N;i++){if(F.tm[i]>fT)break;const px=F.wx[i]*k-ox,py=F.wy[i]*k-oy,r=F.rad[i];
+    if(px<-r||py<-r||px>256+r||py>256+r)continue;const a=fT-F.tm[i],b=bins[a<12*HR?2:a<48*HR?1:0];b.moveTo(px+r,py);b.arc(px,py,r,0,7)}
+  ctx.globalAlpha=.9;[tok('fire-old'),tok('fire-mid'),tok('fire-new')].forEach((c,j)=>{ctx.fillStyle=c;ctx.fill(bins[j])});
+}
+map.createPane('fires').style.zIndex=450;
+function ensureFires(){
+  if(fireLayer)return;if(!F){F=decodeFires();fT=F.t1}
+  const FL=L.GridLayer.extend({createTile(c){const cv=document.createElement('canvas');cv.width=cv.height=256;cv._c=c;tiles.add(cv);drawTile(cv);return cv}});
+  fireLayer=new FL({pane:'fires',updateWhenZooming:false});fireLayer.on('tileunload',e=>tiles.delete(e.tile));
+}
+
+// camera: frame bounds beside the side panel
+function frame(b,opt={}){
+  const pw=isPhone()?0:Math.min(400,innerWidth-40);
+  const top=innerWidth<=1020?24:140;   // keep the region caption clear of the data
+  const o={paddingTopLeft:[pw+24,top],paddingBottomRight:[24,opt.bottom??24],maxZoom:opt.maxZoom??10};
+  reduced()?map.fitBounds(b,o):map.flyToBounds(b,{...o,duration:1.1});
+}
+
+// ======================================================= command deck
+function caption(e,r,m){$('capE').textContent=e;$('capR').textContent=r;$('capM').textContent=m}
+function legendAPI(extra=''){
+  const rng=['0–50','51–100','101–200','201–300','300+'];
+  $('legend').innerHTML=`<div class="t">${t('api_name')}</div><div class="scale">${APIV.map(v=>`<div style="background:var(--${v})"></div>`).join('')}</div>
+    <div class="lbl">${t('cat').map((c,i)=>`<span><b>${c}</b>${rng[i]}</span>`).join('')}</div>${extra?`<div class="extra">${extra}</div>`:''}`;
+}
+function legendFires(){$('legend').innerHTML=`<div class="t">${t('m_fires')}</div><div class="extra" style="margin-top:0">${['fire-new','fire-mid','fire-old'].map((v,i)=>`<span><span class="dot" style="background:var(--${v})"></span>${t('age')[i]}</span>`).join('')}</div>`}
+let playT=null;
+function stopPlay(){clearInterval(playT);playT=null;$('playBtn').innerHTML=ic('play');$('playBtn').setAttribute('aria-label','Play')}
+function player(on,cfg){
+  $('ws').classList.toggle('has-player',!!on);$('player').hidden=!on;stopPlay();
+  if(!on)return;
+  const sl=$('slider');sl.min=0;sl.max=cfg.max;sl.value=cfg.value;sl.oninput=()=>cfg.draw(+sl.value);
+  $('ticks').innerHTML=cfg.ticks.map(x=>`<span>${x}</span>`).join('');
+  $('playBtn').onclick=()=>{if(playT){stopPlay();return}if(+sl.value>=+sl.max)sl.value=cfg.from;$('playBtn').innerHTML=ic('pause');$('playBtn').setAttribute('aria-label','Pause');
+    playT=setInterval(()=>{sl.value=Math.min(+sl.max,+sl.value+cfg.step);sl.oninput();if(+sl.value>=+sl.max)stopPlay()},cfg.ms)};
+  cfg.draw(+sl.value);
+}
+
+// ======================================================= charts: hand-drawn SVG, like Elevate's chart cards
+function lineChart({x0,x1,yMax,series,xticks,thr=[],nowX=null,w=372,h=190}){
+  const L0=30,R0=6,Tp=8,B0=20,iw=w-L0-R0,ih=h-Tp-B0;
+  const X=v=>L0+(v-x0)/(x1-x0)*iw,Y=v=>Tp+ih-Math.min(v,yMax)/yMax*ih;
+  const step=[50,100,200,500,1000,2000,5000].find(v=>yMax/v<=5)||10000;
+  let s=`<svg class="chart" viewBox="0 0 ${w} ${h}" role="img">`;
+  for(let v=0;v<=yMax+.1;v+=step)s+=`<line class="grid" x1="${L0}" x2="${w-R0}" y1="${Y(v)}" y2="${Y(v)}"/><text class="yl" x="${L0-5}" y="${Y(v)+3}">${fmtN(v)}</text>`;
+  xticks.forEach(([v,l])=>{s+=`<text class="xl" x="${X(v)}" y="${h-5}">${l}</text>`});
+  thr.forEach(([v,l])=>{if(v<yMax)s+=`<line class="thr" x1="${L0}" x2="${w-R0}" y1="${Y(v)}" y2="${Y(v)}"/><text class="thl" x="${w-R0}" y="${Y(v)-3}">${l}</text>`});
+  if(nowX!=null)s+=`<line class="now" x1="${X(nowX)}" x2="${X(nowX)}" y1="${Tp}" y2="${Tp+ih}"/><text x="${X(nowX)+4}" y="${Tp+8}">${t('now')}</text>`;
+  series.forEach(se=>{if(!se.pts.length)return;const d=se.pts.map((p,i)=>(i?'L':'M')+X(p[0]).toFixed(1)+','+Y(p[1]).toFixed(1)).join('');
+    if(se.area)s+=`<path d="${d}L${X(se.pts.at(-1)[0]).toFixed(1)},${Y(0)}L${X(se.pts[0][0]).toFixed(1)},${Y(0)}Z" style="fill:${se.color};opacity:.18;stroke:none"/>`;
+    s+=`<path d="${d}" style="fill:none;stroke:${se.color};stroke-width:${se.width||1.8}" ${se.dash?'stroke-dasharray="5 4"':''} stroke-linejoin="round" stroke-linecap="round"/>`;
+    if(se.dots)se.pts.forEach(p=>{s+=`<circle cx="${X(p[0]).toFixed(1)}" cy="${Y(p[1]).toFixed(1)}" r="2.5" style="fill:${se.color}"/>`})});
+  return s+`<line class="cur" x1="0" x2="0" y1="${Tp}" y2="${Tp+ih}" style="stroke:var(--muted-fg);stroke-width:1;opacity:0"/></svg>`;
+}
+function hoverChart(wrap,{x0,x1,w=372,series,fmt}){
+  const svg=wrap.querySelector('svg'),cur=svg.querySelector('.cur'),tip=document.createElement('div');tip.className='ctip';tip.hidden=true;wrap.appendChild(tip);
+  const L0=30,R0=6,iw=w-L0-R0;
+  svg.addEventListener('pointermove',e=>{const r=svg.getBoundingClientRect(),vx=(e.clientX-r.left)/r.width*w;if(vx<L0||vx>w-R0){tip.hidden=true;cur.style.opacity=0;return}
+    const xv=x0+(vx-L0)/iw*(x1-x0);let best=null;
+    const rows=series.map(se=>{let b=null;for(const p of se.pts)if(b==null||Math.abs(p[0]-xv)<Math.abs(b[0]-xv))b=p;
+      if(b&&Math.abs(b[0]-xv)<3*HR){best=best??b[0];return `<div><span class="dot" style="background:${se.color};margin-right:5px"></span>${se.name} <b>${b[1]}</b></div>`}return ''}).join('');
+    if(!rows){tip.hidden=true;cur.style.opacity=0;return}
+    const px=L0+(best-x0)/(x1-x0)*iw;cur.setAttribute('x1',px);cur.setAttribute('x2',px);cur.style.opacity=.5;
+    tip.innerHTML=`<div class="muted">${fmt(best)}</div>${rows}`;tip.hidden=false;
+    tip.style.left=Math.min(Math.max(0,px/w*r.width-60),r.width-140)+'px';tip.style.top='-8px'});
+  svg.addEventListener('pointerleave',()=>{tip.hidden=true;cur.style.opacity=0});
+}
+function barChart({labels,stacks,w=372,h=160}){
+  const L0=34,R0=4,Tp=6,B0=18,iw=w-L0-R0,ih=h-Tp-B0,n=labels.length;
+  const tot=labels.map((_,i)=>stacks.reduce((a,s)=>a+s.vals[i],0)),yMax=Math.max(1,...tot)*1.08;
+  const step=[1,2,5,10,20,50,100,200,500,1000,2000,5000,10000,20000,50000].find(v=>yMax/v<=4)||100000;
+  const Y=v=>Tp+ih-v/yMax*ih,bw=iw/n*.62;
+  let s=`<svg class="chart" viewBox="0 0 ${w} ${h}" role="img">`;
+  for(let v=0;v<=yMax;v+=step)s+=`<line class="grid" x1="${L0}" x2="${w-R0}" y1="${Y(v)}" y2="${Y(v)}"/><text class="yl" x="${L0-5}" y="${Y(v)+3}">${v>=1000?(v/1000)+'k':v}</text>`;
+  labels.forEach((l,i)=>{const c=L0+iw/n*(i+.5);let acc=0;
+    stacks.forEach(st=>{const v=st.vals[i];if(!v)return;const y1=Y(acc),y2=Y(acc+v);s+=`<rect x="${(c-bw/2).toFixed(1)}" y="${y2.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0,y1-y2).toFixed(1)}" rx="2" style="fill:${st.color}"><title>${st.name}: ${fmtN(v)}</title></rect>`;acc+=v});
+    s+=`<text class="xl" x="${c}" y="${h-5}">${l}</text>`});
+  return s+'</svg>';
+}
+const legendRow=items=>`<div class="legend-row">${items.map(([c,n,k])=>`<span>${k==='line'?`<span class="ln" style="border-color:${c}"></span>`:k==='dash'?`<span class="ln d" style="border-color:${c}"></span>`:`<span class="dot" style="background:${c}"></span>`}${n}</span>`).join('')}</div>`;
+function srcBars(groups,click){
+  if(!groups.length)return '';
+  return `<div class="srcs">${groups.slice(0,5).map(g=>`<div class="src${click?' click':''}" data-k="${esc(g.pl[1])}"><div class="t"><b>${esc(prov(g.pl))}</b><span class="num muted">${Math.round(g.f*100)}%</span></div>
+    <div class="track"><i style="width:${Math.max(2,g.f*100)}%"></i></div><div class="w">${t('near')} ${esc(g.towns.slice(0,3).join(', '))}</div></div>`).join('')}</div>`;
+}
+
+// ======================================================= modes
+let mode='today';
+const MODES=['today','area','smoke','fires','about'],RENDER={};
+function setMode(m,opts={}){
+  if(!MODES.includes(m))m='today';
+  mode=m;
+  document.querySelectorAll('.mode').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===m));
+  [srcLayer,plumeLayer,windLayer,backLayer].forEach(l=>map.removeLayer(l));
+  if(fireLayer)map.removeLayer(fireLayer);
+  $('seg3d').hidden=true;$('three').hidden=true;$('story').hidden=true;$('stage').classList.remove('night');$('ws').classList.remove('story');
+  map.addLayer(stLayer);
+  RENDER[m](opts);
+  $('pbody').scrollTop=0;
+  try{history.replaceState(null,'','#'+m)}catch(e){}
+  try{localStorage.setItem('jw-mode',m)}catch(e){}
+  if(isPhone()&&!opts.keepScroll)scrollTo({top:0,behavior:reduced()?'auto':'smooth'});
+}
+document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>setMode(b.dataset.v));
+
+// ---------- Today
+RENDER.today=function(){
+  const M=nationModel(),n=M.unh.length;
+  caption(t('deck_e'),t('reg_today'),t('deck_doe',fStamp(H.t_obs)));legendAPI();player(false);
+  paintStations(s=>s.now);frame([[-0.6,99.3],[7.3,119.4]]);
+  const br=D.briefing&&D.briefing[LANG];
+  const lede=[t('lede_worst',listJoin(M.worst.slice(0,3).map(s=>`${s.area} (${s.now})`))),t('lede_'+M.trend,listJoin(M.topStates))];
+  if(M.provs.length)lede.push(t('lede_src',listJoin(M.provs.map(g=>prov(g.pl)))));
+  const typical=[...ST].map(s=>s.now||0).sort((a,b)=>a-b)[Math.floor(ST.length*.75)],ci=catOf(typical);
+  $('pbody').innerHTML=`
+  <div class="lead"><div class="meta">${t('reading',fStamp(H.t_obs))}</div>
+    <div class="big num">${n}</div><div class="sub">${n?t('hero_sub',n,ST.length):t('hero_ok')}</div></div>
+  <div class="card">${cardH(br?'spark':'text',br?'violet':'blue',t('brief'),'',br?`<span class="chip violet">${t('brief_ai')}</span>`:'')}
+    <p class="body">${esc(br||lede.join(' '))}</p>${br?`<p class="note">${t('brief_ai_note')}</p>`:''}</div>
+  <div class="card">${cardH('cal','amber',t('next3'),t('next3_sub'))}
+    <div class="stats">${M.days.map((c,k)=>{const u=unhOf(c),tot=c.reduce((a,b)=>a+b,0)||1;
+      return `<div class="stat"><div class="k">${k===0?t('today'):k===1?t('tomorrow'):fWeekday(DAY0+k*86400+12*HR)}</div><div class="v" style="color:${u?'var(--amber)':'var(--green)'}">${u}</div><div class="s">${t('areas')}</div>
+        <div class="bar">${c.map((v,i)=>v?`<i style="width:${v/tot*100}%;background:var(--${APIV[i]})"></i>`:'').join('')}</div></div>`}).join('')}</div></div>
+  <div class="callout ${ci>=3?'red':ci>=2?'amber':'info'}"><div class="ct">${ic(ci>=2?'alert':'check')}${t('todo')} · ${t('cat')[ci]}</div>${t('adv')[ci]}
+    ${ci>=2?`<ul>${t('tips').map(x=>`<li>${x}</li>`).join('')}</ul>`:''}<div class="note" style="margin-top:6px">${t('todo_src')}</div></div>
+  <div class="tbl"><table><thead><tr><th>${t('worst')}</th><th class="r">${t('th_api')}</th></tr></thead><tbody>
+    ${M.worst.slice(0,6).map(s=>`<tr data-id="${s.id}"><td>${esc(s.area)}<small>${esc(stateOf(s))}</small></td><td class="r">${apiDot(s.now)}</td></tr>`).join('')}</tbody></table></div>
+  <div class="row"><button class="btn brand" data-go="area">${ic('pin')}${t('cta_area')}</button><button class="btn" data-go="smoke">${ic('wind')}${t('cta_smoke')}</button></div>
+  <p class="note">${t('off_note')} <a href="https://eqms.doe.gov.my/APIMS/main" target="_blank" rel="noopener">eqms.doe.gov.my</a>.</p>`;
+  $('pbody').querySelectorAll('tr[data-id]').forEach(r=>r.onclick=()=>{selectStation(ST.find(s=>s.id===r.dataset.id));setMode('area')});
+  $('pbody').querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>setMode(b.dataset.go));
+  $('seg3d').hidden=!D.story_terrain;segLabels();
+  setStory(storyView);
+};
+
+// ---------- Your area
+(function(){let id=null;try{id=localStorage.getItem('jw-station')}catch(e){}
+  selSt=ST.find(s=>s.id===id)||ST.find(s=>/Kuala Lumpur/.test(s.state)&&/Batu Muda|Cheras/i.test(s.area))||ST.find(s=>/Kuala Lumpur/.test(s.state))||ST[0]})();
+function selectStation(s){selSt=s;try{localStorage.setItem('jw-station',s.id)}catch(e){}}
+RENDER.area=function(){
+  const s=selSt;
+  caption(t('deck_e'),s.area,`${stateOf(s)} · ${t('deck_doe',fStamp(H.t_obs))}`);
+  legendAPI(`<span><span class="ln" style="border-color:var(--back);border-top-style:dashed"></span>${t('lg_back')}</span>`);player(false);
+  paintStations(x=>x.now);
+  backLayer.clearLayers();
+  s.back.forEach((p,i)=>L.polyline(p.map(([x,y])=>[y,x]),{renderer:rend,color:tok('back'),weight:2,opacity:.9,dashArray:i?'2 6':'6 5',interactive:false}).addTo(backLayer));
+  map.addLayer(backLayer);
+  frame(L.latLngBounds([[s.lat,s.lon],...s.back.flat().map(([x,y])=>[y,x])]).pad(.08),{maxZoom:8.5});
+  const groups=new Map();[...ST].sort((a,b)=>stateOf(a).localeCompare(stateOf(b))||a.area.localeCompare(b.area)).forEach(x=>{if(!groups.has(stateOf(x)))groups.set(stateOf(x),[]);groups.get(stateOf(x)).push(x)});
+  const tom=s.days[1].peak,tr=tom!=null&&s.now!=null?(tom>s.now+10?'up':tom<s.now-10?'down':'flat'):null;
+  const ci=catOf(Math.max(s.now||0,s.days[0].peak||0,s.days[1].peak||0));
+  const pin=a=>{const i=catOf(a),lo=[0,50,100,200,300][i],hi=[50,100,200,300,500][i];return (i+Math.min(1,(a-lo)/(hi-lo)))/5*100};
+  const fwd=byProvince(s.fsrc),back=byProvince(s.bsrc),nm=g=>`${g.towns[0]} (${prov(g.pl)})`;
+  const srcText=fwd.length?t('src_fwd',s.area,listJoin(fwd.slice(0,2).map(nm))):back.length?t('src_back',s.area,listJoin(back.slice(0,2).map(nm))):t('src_none',s.area);
+  const x0=T0-7*86400,x1=T0+80*HR;
+  const obs=s.obs.filter(([x])=>x>=x0),fc=[[T0,s.now],...[...s.fcMap].filter(([x])=>x<=x1)];
+  const yMax=Math.max(150,...obs.map(p=>p[1]),...fc.map(p=>p[1]||0))*1.1;
+  const xt=[];for(let d=dayStart(x0)+86400;d<=x1;d+=86400)xt.push([d+12*HR,fShort(d+12*HR)]);
+  const series=[{name:t('obs'),pts:obs,color:'var(--foreground)',width:1.6},{name:t('fc'),pts:fc,color:'var(--violet)',width:2,dash:true}];
+  $('pbody').innerHTML=`
+  <div class="field"><label class="note" for="stSel" style="display:block;margin:0 0 4px 4px">${t('pick')}</label>
+    <select id="stSel">${[...groups.entries()].map(([g,ss])=>`<optgroup label="${esc(g)}">${ss.map(x=>`<option value="${x.id}" ${x===s?'selected':''}>${esc(x.area)} · ${x.now??'–'}</option>`).join('')}</optgroup>`).join('')}</select>${ic('chev')}</div>
+  <div class="card">${cardH('pin','blue',esc(s.area),esc(stateOf(s)),apiChip(s.now))}
+    <div class="reading"><div class="v" style="color:${apiCol(s.now)}">${s.now??'–'}</div><div class="note" style="padding-bottom:4px">${t('reading',fStamp(H.t_obs))}${tr?`<br><span style="color:var(--foreground)">${t('trend_'+tr)}</span>`:''}</div></div>
+    <div class="gauge"><div class="scale">${APIV.map(v=>`<div style="background:var(--${v})"></div>`).join('')}</div><div class="pin" style="left:${pin(s.now??0)}%"></div>
+      <div class="lbl">${t('cat').map((c,i)=>`<span><b>${c}</b>${['0–50','51–100','101–200','201–300','300+'][i]}</span>`).join('')}</div></div></div>
+  <div class="callout ${ci>=3?'red':ci>=2?'amber':'info'}"><div class="ct">${ic(ci>=2?'alert':'check')}${t('todo')} · ${t('cat')[ci]}</div>${t('adv')[ci]}
+    ${ci>=2?`<ul>${t('tips').slice(0,4).map(x=>`<li>${x}</li>`).join('')}</ul>`:''}</div>
+  <div class="card">${cardH('cal','amber',t('here3'),t('peak'))}
+    <div class="stats">${s.days.map((d,k)=>`<div class="stat"><div class="k">${k===0?t('today'):k===1?t('tomorrow'):fWeekday(d.start+12*HR)}</div><div class="v" style="color:${d.peak>100?'var(--amber)':'var(--foreground)'}">${d.peak??'–'}</div><div class="s">${d.peak!=null?t('cat')[catOf(d.peak)]:''}</div></div>`).join('')}</div></div>
+  <div class="card">${cardH('chart','violet',t('chart_t'),t('chart_sub'))}
+    <div class="chartwrap" id="cw">${lineChart({x0,x1,yMax,series,xticks:xt,thr:[[100,t('thr')],[200,t('thr2')]],nowX:T0})}</div>
+    ${legendRow([['var(--foreground)',t('obs'),'line'],['var(--violet)',t('fc'),'dash'],['var(--amber)',t('thr'),'dash']])}
+    <p class="note">${t('chart_src')}</p></div>
+  <div class="card">${cardH('flame','red',t('src_t'),fwd.length?t('src_sub_f'):t('src_sub_b'))}
+    <p class="body">${esc(srcText)}</p>${srcBars(fwd.length?fwd:back)}</div>`;
+  hoverChart($('cw'),{x0,x1,series,fmt:fStamp});
+  $('stSel').onchange=e=>{selectStation(ST.find(x=>x.id===e.target.value));setMode('area',{keepScroll:true})};
+  paintStations();
+};
+
+// ---------- Smoke
+let autoPlayed=false,smokeX=T0;
+const TB=T0-48*HR;
+function drawSmoke(x){
+  smokeX=x;paintStations(s=>apiAt(s,x));
+  const pc=tok('plume');
+  for(const [p,l] of plumes){const h=Math.floor((x-p.t0)/HR);
+    if(h<1||h>p.p.length+8){l.setLatLngs([]);continue}
+    const end=Math.min(h,p.p.length-1),beg=Math.max(0,end-20);l.setLatLngs(p.p.slice(beg,end+1).map(([a,b])=>[b,a]));l.setStyle({color:pc})}
+  if(map.hasLayer(windLayer)){let k=0;H.arrows.t.forEach((v,i)=>{if(Math.abs(v-x)<Math.abs(H.arrows.t[k]-x))k=i});const uv=H.arrows.uv[k],wc=tok('wind');
+    arrows.forEach(([la,lo,p],i)=>{const [u,v]=uv[i],s=.13,kx=Math.cos(la*Math.PI/180),tx=lo+u*s/kx,ty=la+v*s,a=Math.atan2(v,u),hl=Math.min(.35,Math.hypot(u,v)*s*.35);
+      p.setLatLngs([[la,lo],[ty,tx],[ty+hl*Math.sin(a+2.6),tx+hl*Math.cos(a+2.6)/kx],[ty,tx],[ty+hl*Math.sin(a-2.6),tx+hl*Math.cos(a-2.6)/kx]]);p.setStyle({color:wc})})}
+  const dh=Math.round((x-T0)/HR);
+  $('when').innerHTML=`${fStamp(x)}<small>${dh===0?t('now'):dh<0?t('ago',-dh):t('ahead',dh)}</small>`;
+  $('capM').textContent=`${fStamp(x)} MYT · ${dh>0?t('fc'):t('obs')}`;
+}
+RENDER.smoke=function(){
+  caption(t('deck_e'),t('reg_smoke'),'');
+  legendAPI(`<span><span class="ln"></span>${t('lg_plume')}</span><span><span class="dot" style="background:var(--fire-mid);opacity:.6"></span>${t('lg_fire')}</span>`);
+  map.addLayer(srcLayer);map.addLayer(plumeLayer);srcMk.forEach(m=>m.setStyle({fillColor:tok('fire-mid')}));
+  frame([[-4.6,97.5],[7.4,119.4]],{bottom:96});
+  player(true,{max:120,value:Math.round((smokeX-TB)/HR),from:48,step:1,ms:140,
+    ticks:[-48,-24,0,24,48,72].map(h=>h===0?t('now'):fShort(T0+h*HR)),draw:v=>drawSmoke(TB+v*HR)});
+  $('pbody').innerHTML=`
+  <div class="lead"><div class="meta">${t('smoke_meta')}</div><div class="sub" style="font-size:20px">${t('smoke_h')}</div></div>
+  <p class="body">${t('smoke_p')}</p>
+  <div class="card"><label class="switch"><span>${t('wind')}<span class="note" style="display:block">${t('wind_s')}</span></span><input type="checkbox" id="windT"></label></div>
+  <div class="card">${cardH('flame','red',t('pri_t'),t('pri_sub'))}${srcBars(byProvince(H.priority),true)}<p class="note">${t('pri_note')}</p></div>
+  <div class="callout info"><div class="ct">${ic('info')}${t('cav_t')}</div>${t('smoke_cav')}</div>`;
+  $('windT').onchange=e=>{e.target.checked?map.addLayer(windLayer):map.removeLayer(windLayer);drawSmoke(smokeX)};
+  $('pbody').querySelectorAll('.src.click').forEach(b=>b.onclick=()=>{const c=[...D.complexes].sort((a,b)=>b.frp-a.frp).find(c=>c.place[1]===b.dataset.k);if(c){selFire=c;setMode('fires',{focus:true})}});
+  if(!autoPlayed&&!reduced()){autoPlayed=true;setTimeout(()=>{if(mode==='smoke'&&!playT)$('playBtn').click()},900)}
+};
+
+// ---------- Fires
+let selFire=null,fireView='map';
+function drawFires(x){fT=x;tiles.forEach(drawTile);$('when').innerHTML=`${fDay(x)}<small>${fTime(x)} MYT</small>`}
+RENDER.fires=function(opts={}){
+  ensureFires();
+  if(!selFire)selFire=[...D.complexes].sort((a,b)=>b.frp-a.frp)[0];
+  map.removeLayer(stLayer);map.addLayer(fireLayer);
+  caption(t('deck_e'),t('reg_fires'),t('deck_fire',fStamp(F.t1)));legendFires();
+  $('seg3d').hidden=false;segLabels();$('v3d').disabled=!selFire.terrain;
+  player(true,{max:1000,value:Math.round((fT-F.t0)/(F.t1-F.t0)*1000),from:0,step:6,ms:60,ticks:[F.t0,(F.t0+F.t1)/2,F.t1].map(fShort),draw:v=>drawFires(F.t0+(F.t1-F.t0)*v/1000)});
+  if(opts.focus)focusFire(selFire);else frame([[-9.5,95],[5.8,141]],{bottom:96,maxZoom:6});
+  const top=[...D.complexes].sort((a,b)=>b.frp-a.frp).slice(0,15);
+  const dk=Object.keys(D.daily),isl=[['Kalimantan','var(--violet)'],['Sumatra','var(--blue)'],['Papua','var(--teal)']];
+  const other=dk.map(d=>Object.entries(D.daily[d]).filter(([k])=>!isl.some(i=>i[0]===k)).reduce((a,[,v])=>a+v,0));
+  const stacks=[...isl.map(([k,c])=>({name:k,vals:dk.map(d=>D.daily[d][k]||0),color:c})),{name:t('other'),vals:other,color:'var(--magenta)'}];
+  $('pbody').innerHTML=`
+  <div class="lead"><div class="meta">${t('fires_meta')}</div><div class="big sm num">${fmtN(D.last24)}</div><div class="sub">${t('fires_sub')}</div></div>
+  <div class="stats"><div class="stat"><div class="k">${t('k7')}</div><div class="v">${fmtN(D.total)}</div></div>
+    <div class="stat"><div class="k">${t('kAreas')}</div><div class="v">${fmtN(D.n_complexes)}</div></div>
+    <div class="stat"><div class="k">${t('kPass')}</div><div class="v" style="font-size:15px;line-height:1.75">${fShort(F.t1)}</div></div></div>
+  <div class="card" id="fSel"></div>
+  <div class="card">${cardH('list','violet',t('biggest'),'')}<div class="flist" style="margin:0 -12px -12px">${top.map(c=>`<button data-id="${c.id}" aria-current="${c===selFire}"><span class="n">${esc(c.place[0])}</span><span class="x">${c.terrain?'3D':''}</span><span class="m">${esc(prov(c.place))} · ${fmtN(c.n)} ${t('hotspots')} · ${fmtN(c.area)} km²</span></button>`).join('')}</div></div>
+  <div class="card">${cardH('chart','violet',t('daily'),t('daily_sub'))}${barChart({labels:dk.map(d=>fShort(Date.parse(d+'T12:00:00Z')/1000)),stacks})}
+    ${legendRow(stacks.map(s=>[s.color,s.name]))}</div>`;
+  $('pbody').querySelectorAll('.flist button').forEach(b=>b.onclick=()=>{selFire=cx[+b.dataset.id];
+    $('pbody').querySelectorAll('.flist button').forEach(x=>x.setAttribute('aria-current',x===b));renderFireSel();focusFire(selFire);
+    $('v3d').disabled=!selFire.terrain;if(fireView==='3d')selFire.terrain?show3D(true):show3D(false);
+    if(isPhone())scrollTo({top:0,behavior:reduced()?'auto':'smooth'})});
+  renderFireSel();
+  show3D(fireView==='3d'&&!!selFire.terrain);
+};
+function focusFire(c){frame([[c.bbox[1],c.bbox[0]],[c.bbox[3],c.bbox[2]]],{bottom:96,maxZoom:9});$('capR').textContent=t('near_town',c.place[0],prov(c.place))}
+function renderFireSel(){
+  const c=selFire,pts=c.series.map(d=>[Date.parse(d.day+'T12:00:00Z')/1000,Math.round(d.area)]);
+  const x0=pts[0][0],x1=Math.max(pts.at(-1)[0],x0+86400),yMax=Math.max(1,...pts.map(p=>p[1]))*1.15;
+  $('fSel').innerHTML=`${cardH('flame','red',t('near_town',esc(c.place[0]),esc(prov(c.place))),t('sel'),c.terrain?'<span class="chip violet">3D</span>':'')}
+    <p class="body">${t('fire_text',fmtN(c.n),fmtN(c.area),fStamp(c.last))}${c.terrain?'':' '+t('no3d')}</p>
+    <div class="note">${t('burnt')} · ${t('burnt_sub')}</div>
+    ${lineChart({x0,x1,yMax,series:[{pts,color:'var(--red)',area:true,dots:true}],xticks:pts.length>5?pts.filter((_,i)=>i%2===0).map(p=>[p[0],fShort(p[0])]):pts.map(p=>[p[0],fShort(p[0])]),h:150})}`;
+}
+$('vMap').onclick=()=>{if(mode==='today'){setStory(false);return}fireView='map';show3D(false)};
+$('v3d').onclick=()=>{if(mode==='today'){setStory(true);return}if(!selFire||!selFire.terrain)return;fireView='3d';show3D(true)};
+function segLabels(){
+  const st=mode==='today';$('v3d').textContent=st?t('view_story'):t('view_3d');$('vMap').textContent=t('view_map');
+  if(st){$('v3d').disabled=false;$('v3d').setAttribute('aria-pressed',!!storyView);$('vMap').setAttribute('aria-pressed',!storyView)}
+}
+function show3D(on){
+  $('three').hidden=!on;$('vMap').setAttribute('aria-pressed',!on);$('v3d').setAttribute('aria-pressed',on);
+  if(mode==='fires')$('player').hidden=on;
+  if(on)build3D(selFire);
+}
+
+// ---------- 3D terrain of one fire area
+let R3=null;
+function init3D(){
+  const host=$('three'),r=new THREE.WebGLRenderer({antialias:true,alpha:true});r.setPixelRatio(Math.min(devicePixelRatio,2));host.appendChild(r.domElement);
+  const scene=new THREE.Scene(),cam=new THREE.PerspectiveCamera(45,1,.1,2000);cam.position.set(0,-95,75);cam.up.set(0,0,1);
+  const ctl=new THREE.OrbitControls(cam,r.domElement);ctl.enableDamping=true;
+  scene.add(new THREE.AmbientLight(0xffffff,.6));const sun=new THREE.DirectionalLight(0xffffff,.75);sun.position.set(-60,-40,120);scene.add(sun);
+  const fit=()=>{const w=host.clientWidth,h=host.clientHeight;if(!w||!h)return;const pr=r.getPixelRatio();if(r.domElement.width!==Math.round(w*pr)||r.domElement.height!==Math.round(h*pr)){r.setSize(w,h);cam.aspect=w/h;cam.updateProjectionMatrix()}};
+  (function loop(){requestAnimationFrame(loop);if(host.hidden)return;fit();ctl.update();r.render(scene,cam)})();
+  R3={scene};
+}
+function build3D(c){
+  if(!c||!c.terrain)return;if(!R3)init3D();ensureFires();const {scene}=R3;
+  if(R3.mesh){scene.remove(R3.mesh);R3.mesh.geometry.dispose()}if(R3.pts){scene.remove(R3.pts);R3.pts.geometry.dispose()}
+  const Tr=c.terrain,s=Tr.size,e=new Int16Array(b64(Tr.elev)),[lo,hi]=minmax(e),[x0,y0,x1,y1]=Tr.bbox;
+  const km=(x1-x0)*111.32*Math.cos((y0+y1)/2*Math.PI/180),zs=100/km/1000*6;
+  const g=new THREE.PlaneGeometry(100,100,s-1,s-1),pos=g.attributes.position,col=new Float32Array(pos.count*3);
+  const ramp=[[.16,.33,.2],[.36,.47,.25],[.56,.5,.36],[.8,.77,.71]];
+  for(let i=0;i<pos.count;i++){pos.setZ(i,e[i]*zs);const q=Math.min(1,Math.max(0,(e[i]-lo)/Math.max(1,hi-lo)))*3,j=Math.min(2,Math.floor(q)),f=q-j;col.set(ramp[j].map((v,k)=>v+(ramp[j+1][k]-v)*f),i*3)}
+  g.setAttribute('color',new THREE.BufferAttribute(col,3));g.computeVertexNormals();
+  R3.mesh=new THREE.Mesh(g,new THREE.MeshLambertMaterial({vertexColors:true}));scene.add(R3.mesh);
+  const P=[],C=[],cN=new THREE.Color(tok('fire-new')),cM=new THREE.Color(tok('fire-mid')),cO=new THREE.Color(tok('fire-old'));
+  for(let i=0;i<F.N;i++){const la=F.lat[i],lo2=F.lon[i];if(lo2<x0||lo2>x1||la<y0||la>y1)continue;
+    const ii=Math.round((lo2-x0)/(x1-x0)*(s-1)),jj=Math.round((y1-la)/(y1-y0)*(s-1));
+    P.push((lo2-x0)/(x1-x0)*100-50,(la-y0)/(y1-y0)*100-50,e[jj*s+ii]*zs+.6);const a=F.t1-F.tm[i],cc=a<12*HR?cN:a<48*HR?cM:cO;C.push(cc.r,cc.g,cc.b)}
+  const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.Float32BufferAttribute(P,3));pg.setAttribute('color',new THREE.Float32BufferAttribute(C,3));
+  R3.pts=new THREE.Points(pg,new THREE.PointsMaterial({size:Math.max(.9,100/km*.6),vertexColors:true}));scene.add(R3.pts);
+}
+
+// ======================================================= 3D story: fires → smoke → Malaysia's air
+let SC=null,storyView=!!D.story_terrain,storyAuto=false,storyT=T0;
+const TE=T0+72*HR;
+const unhAt=x=>{const h=Math.floor(x/HR)*HR;let n=0;for(const s of ST)if((apiAt(s,h)||0)>100)n++;return n};
+function firesBefore(x){let lo=0,hi=F.N;while(lo<hi){const m=(lo+hi)>>1;if(F.tm[m]<=x)lo=m+1;else hi=m}return lo}
+function setStory(on){
+  storyView=on;on=on&&!!D.story_terrain&&mode==='today';
+  $('story').hidden=!on;$('stage').classList.toggle('night',on);$('ws').classList.toggle('story',on);segLabels();
+  if(!on){if(mode==='today'){legendAPI();player(false);caption(t('deck_e'),t('reg_today'),t('deck_doe',fStamp(H.t_obs)))}return}
+  if(!SC)storyInit();
+  const TS=SC.TS,auto=!storyAuto&&!reduced();
+  if(auto){storyAuto=true;storyT=TS}
+  $('legend').innerHTML=`<div class="t">${t('api_name')}</div><div class="scale">${APIV.map(v=>`<div style="background:var(--${v})"></div>`).join('')}</div>
+    <div class="lbl">${t('cat').map((c,i)=>`<span><b>${c}</b>${['0–50','51–100','101–200','201–300','300+'][i]}</span>`).join('')}</div>
+    <div class="extra"><span><span style="display:inline-block;width:3px;height:12px;border-radius:2px;background:var(--api-unh)"></span>${t('lg_pillar')}</span>
+    <span><span class="dot" style="background:#ffb000;box-shadow:0 0 6px #ff9a30"></span>${t('lg_ember')}</span>
+    <span><span class="dot" style="background:#d9c2a8;opacity:.7"></span>${t('lg_smoke')}</span></div>`;
+  player(true,{max:1000,value:Math.round((storyT-TS)/(TE-TS)*1000),from:0,step:2,ms:33,
+    ticks:[TS,TS+(TE-TS)/3,TS+(TE-TS)*2/3,TE].map(fShort),
+    draw:v=>{storyT=TS+(TE-TS)*v/1000;$('when').innerHTML=`${fStamp(storyT)}<small>${storyT>T0?t('fc'):t('obs')}</small>`}});
+  SC.cine=true;SC.resize();
+  if(auto)setTimeout(()=>{if(mode==='today'&&storyView&&!playT)$('playBtn').click()},800);
+}
+function storyInit(){
+  if(!F){F=decodeFires();fT=F.t1}
+  const T=D.story_terrain,nx=T.nx,ny=T.ny,E=new Int16Array(b64(T.elev)),[lon0,lat0,lon1,lat1]=T.bbox;
+  const S=10,lonC=(lon0+lon1)/2,latC=(lat0+lat1)/2,kx=Math.cos(latC*Math.PI/180),ZS=S/111000*25;   // 25× vertical exaggeration
+  const X=lo=>(lo-lonC)*S*kx,Z=la=>-(la-latC)*S;
+  const elev=(la,lo)=>{const fi=Math.min(nx-1.001,Math.max(0,(lo-lon0)/(lon1-lon0)*(nx-1))),fj=Math.min(ny-1.001,Math.max(0,(lat1-la)/(lat1-lat0)*(ny-1)));
+    const i=Math.floor(fi),j=Math.floor(fj),a=fi-i,b=fj-j,e=(ii,jj)=>E[jj*nx+ii];
+    return (e(i,j)*(1-a)+e(i+1,j)*a)*(1-b)+(e(i,j+1)*(1-a)+e(i+1,j+1)*a)*b};
+  const yAt=(la,lo)=>Math.max(0,elev(la,lo))*ZS;
+  const host=$('story');
+  const r=new THREE.WebGLRenderer({antialias:true});r.setPixelRatio(Math.min(devicePixelRatio,1.75));host.prepend(r.domElement);
+  const scene=new THREE.Scene(),night=new THREE.Color('#0b0a12'),hazeC=new THREE.Color('#2b2218'),bg=night.clone();
+  scene.background=bg;scene.fog=new THREE.Fog(bg,150,560);
+  const cam=new THREE.PerspectiveCamera(36,1,.5,3000);
+  const ctl=new THREE.OrbitControls(cam,r.domElement);ctl.enableDamping=true;ctl.dampingFactor=.08;ctl.maxPolarAngle=Math.PI*.46;ctl.minDistance=12;ctl.maxDistance=460;
+  ctl.addEventListener('start',()=>{SC.cine=false});
+  scene.add(new THREE.HemisphereLight(0x9aa8d0,0x1c140e,.75));
+  const sun=new THREE.DirectionalLight(0xffe0c0,1.15);sun.position.set(-160,110,40);scene.add(sun);
+
+  // terrain, coloured by height; the sea floor sits under a dark water plane
+  const W=(lon1-lon0)*S*kx,Hh=(lat1-lat0)*S;
+  const g=new THREE.PlaneGeometry(W,Hh,nx-1,ny-1);g.rotateX(-Math.PI/2);
+  const pos=g.attributes.position,col=new Float32Array(pos.count*3);
+  const stops=[[-3000,[.03,.05,.09]],[-60,[.05,.08,.13]],[0,[.08,.11,.13]],[1,[.13,.16,.11]],[60,[.16,.19,.13]],[400,[.24,.25,.18]],[1200,[.36,.33,.26]],[2500,[.52,.48,.42]],[5000,[.78,.75,.7]]];
+  for(let k=0;k<pos.count;k++){const e=E[k];pos.setY(k,e>0?e*ZS:Math.max(-1.5,e*ZS*.08));
+    let q=0;while(q<stops.length-2&&e>stops[q+1][0])q++;const a=stops[q],b=stops[q+1],f=Math.min(1,Math.max(0,(e-a[0])/(b[0]-a[0])));
+    for(let c=0;c<3;c++)col[k*3+c]=a[1][c]+(b[1][c]-a[1][c])*f}
+  g.setAttribute('color',new THREE.BufferAttribute(col,3));g.computeVertexNormals();
+  scene.add(new THREE.Mesh(g,new THREE.MeshStandardMaterial({vertexColors:true,roughness:.95,metalness:0})));
+  const water=new THREE.Mesh(new THREE.PlaneGeometry(W*5,Hh*5),new THREE.MeshStandardMaterial({color:0x0a1220,roughness:.35,metalness:.25,transparent:true,opacity:.86}));
+  water.rotateX(-Math.PI/2);water.position.y=.02;scene.add(water);
+
+  // coastlines; Malaysia traced in the brand lavender
+  const segs=[],segsMy=[];
+  D.land.forEach(p=>{const arr=p.k==='my'?segsMy:segs,pts=p.p;
+    for(let i=0;i<pts.length;i++){const [a1,o1]=pts[i],[a2,o2]=pts[(i+1)%pts.length];
+      if(o1<lon0||o1>lon1||a1<lat0||a1>lat1||o2<lon0||o2>lon1||a2<lat0||a2>lat1)continue;
+      arr.push(X(o1),yAt(a1,o1)+.1,Z(a1),X(o2),yAt(a2,o2)+.1,Z(a2))}});
+  [[segs,0x8f8aa6,.3],[segsMy,0xbd9fff,.8]].forEach(([arr,c,o])=>{const gg=new THREE.BufferGeometry();gg.setAttribute('position',new THREE.Float32BufferAttribute(arr,3));
+    scene.add(new THREE.LineSegments(gg,new THREE.LineBasicMaterial({color:c,transparent:true,opacity:o})))});
+
+  // fire hotspots: embers that ignite at their detection time; the last 12 h glow and flicker
+  const TS=F.t0,fp=[],fa=[],fs=[];
+  for(let i=0;i<F.N;i++){const la=F.lat[i],lo=F.lon[i];if(lo<lon0||lo>lon1||la<lat0||la>lat1)continue;
+    fp.push(X(lo),yAt(la,lo)+.15,Z(la));fa.push((F.tm[i]-TS)/HR);fs.push(.9+F.rad[i]*.55)}
+  const fg=new THREE.BufferGeometry();fg.setAttribute('position',new THREE.Float32BufferAttribute(fp,3));
+  fg.setAttribute('aT',new THREE.Float32BufferAttribute(fa,1));fg.setAttribute('aS',new THREE.Float32BufferAttribute(fs,1));
+  const fu={uT:{value:0},uC:{value:0},uPR:{value:r.getPixelRatio()},cN:{value:new THREE.Color('#ffc861')},cM:{value:new THREE.Color('#ff7a1f')},cO:{value:new THREE.Color('#6e200e')}};
+  scene.add(new THREE.Points(fg,new THREE.ShaderMaterial({uniforms:fu,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+    vertexShader:`attribute float aT;attribute float aS;uniform float uT,uC,uPR;varying float vAge;
+      void main(){vAge=uT-aT;vec4 mv=modelViewMatrix*vec4(position,1.);gl_Position=projectionMatrix*mv;
+        float fresh=1.-smoothstep(0.,12.,vAge);float pulse=1.+.35*fresh*sin(uC*5.+position.x*3.1+position.z*1.7);
+        gl_PointSize=step(0.,vAge)*aS*uPR*pulse*(1.+.8*fresh)*(200./-mv.z);}`,
+    fragmentShader:`uniform vec3 cN,cM,cO;varying float vAge;
+      void main(){if(vAge<0.)discard;float r=length(gl_PointCoord-.5);if(r>.5)discard;float a=pow(1.-r*2.,1.6);
+        vec3 c=vAge<12.?mix(cN,cM,vAge/12.):vAge<48.?mix(cM,cO,(vAge-12.)/36.):cO;float k=vAge<12.?.75:vAge<48.?.6:.4;gl_FragColor=vec4(c*k,a*k);}`})));
+
+  // smoke: forecast plumes from the fires, and the last 48 h of air arriving at each station
+  const lvlH={925:2.2,850:3.9};
+  const toW=(path,h)=>path.map(([lo,la])=>[X(lo),Math.max(yAt(la,lo)+.7,h),Z(la)]);
+  const PL=H.plumes.map(p=>({t0:p.t0,w:toW(p.p,lvlH[p.lvl]||2.5)}));
+  const BK=ST.filter(s=>s.bload>0).map(s=>({w:toW(s.back[0],lvlH[925]),s}));
+  const cap=PL.reduce((a,p)=>a+p.w.length,0)+BK.reduce((a,b)=>a+b.w.length,0);
+  const sp=new Float32Array(cap*3),sa=new Float32Array(cap),ss=new Float32Array(cap),sg=new THREE.BufferGeometry();
+  sg.setAttribute('position',new THREE.BufferAttribute(sp,3));sg.setAttribute('aA',new THREE.BufferAttribute(sa,1));sg.setAttribute('aS',new THREE.BufferAttribute(ss,1));
+  const smoke=new THREE.Points(sg,new THREE.ShaderMaterial({uniforms:{uPR:{value:r.getPixelRatio()},cS:{value:new THREE.Color('#d9c2a8')}},transparent:true,depthWrite:false,
+    vertexShader:`attribute float aA;attribute float aS;uniform float uPR;varying float vA;void main(){vA=aA;vec4 mv=modelViewMatrix*vec4(position,1.);gl_Position=projectionMatrix*mv;gl_PointSize=aS*uPR*(240./-mv.z);}`,
+    fragmentShader:`uniform vec3 cS;varying float vA;void main(){float r=length(gl_PointCoord-.5);if(r>.5)discard;gl_FragColor=vec4(cS,exp(-r*r*10.)*vA);}`}));
+  smoke.frustumCulled=false;scene.add(smoke);
+  function updateSmoke(x){
+    let n=0;const put=(w,a,sz)=>{sp[n*3]=w[0];sp[n*3+1]=w[1];sp[n*3+2]=w[2];sa[n]=a;ss[n]=sz;n++};
+    for(const P of PL){const h=(x-P.t0)/HR,Lh=P.w.length;if(h<=0||h>Lh+10)continue;
+      const fade=h>Lh-1?Math.max(0,1-(h-Lh+1)/10):Math.min(1,h/2),end=Math.min(Math.floor(h),Lh-1);
+      for(let j=0;j<=end;j++)put(P.w[j],.26*Math.exp(-j/50)*fade,3+j*.2)}
+    // back-trajectories end at the station at T0: during the 48 h before, the air moves along them toward Malaysia
+    if(x>T0-48*HR&&x<=T0+6*HR){const k=Math.max(0,Math.round((T0-x)/HR)),fade=x>T0?Math.max(0,1-(x-T0)/(6*HR)):1;
+      for(const B of BK){const Lb=B.w.length;for(let j=Lb-1;j>=k;j--)put(B.w[j],.24*fade*Math.min(1,(Lb-j)/6),3.5+(Lb-1-j)*.14)}}
+    sg.setDrawRange(0,n);sg.attributes.position.needsUpdate=sg.attributes.aA.needsUpdate=sg.attributes.aS.needsUpdate=true;
+  }
+
+  // DOE stations as light pillars: height and colour follow the API hour by hour
+  const cyl=new THREE.CylinderGeometry(.22,.22,1,12,1,true);cyl.translate(0,.5,0);
+  const gp=new Float32Array(ST.length*3),gc=new Float32Array(ST.length*3),gg2=new THREE.BufferGeometry();
+  gg2.setAttribute('position',new THREE.BufferAttribute(gp,3));gg2.setAttribute('color',new THREE.BufferAttribute(gc,3));
+  const glow=new THREE.Points(gg2,new THREE.ShaderMaterial({uniforms:{uPR:{value:r.getPixelRatio()}},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,vertexColors:true,
+    vertexShader:`uniform float uPR;varying vec3 vC;void main(){vC=color;vec4 mv=modelViewMatrix*vec4(position,1.);gl_Position=projectionMatrix*mv;gl_PointSize=7.*uPR*(240./-mv.z);}`,
+    fragmentShader:`varying vec3 vC;void main(){float r=length(gl_PointCoord-.5);if(r>.5)discard;gl_FragColor=vec4(vC,pow(1.-r*2.,2.));}`}));
+  glow.frustumCulled=false;scene.add(glow);
+  const pillars=ST.map(s=>{const m=new THREE.Mesh(cyl,new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.92,fog:false}));
+    m.position.set(X(s.lon),yAt(s.lat,s.lon),Z(s.lat));scene.add(m);return m});
+  const apiC=APIV.map(v=>new THREE.Color(tok(v)));
+
+  // labels: towns, the fires that matter most to Malaysia, and the worst stations
+  const lbls=[];
+  const lab=(cls,la,lo,dy,text)=>{const d=document.createElement('div');d.className='slbl '+cls;host.appendChild(d);const o={d,v:new THREE.Vector3(X(lo),yAt(la,lo)+dy,Z(la)),text};lbls.push(o);return o};
+  [['Kuala Lumpur',3.14,101.69],['Johor Bahru',1.49,103.74],['Singapore',1.29,103.85],['Kuching',1.55,110.35],['Kota Kinabalu',5.98,116.07],
+   ['Pekanbaru',.51,101.45],['Palembang',-2.98,104.76],['Pontianak',-.03,109.33],['Palangka Raya',-2.21,113.92],['Medan',3.59,98.67]]
+   .forEach(([n,la,lo])=>lab('',la,lo,.9,()=>n));
+  byProvince(H.priority).slice(0,3).forEach(gr=>{const c=[...D.complexes].sort((a,b)=>b.frp-a.frp).find(c=>c.place[1]===gr.pl[1]);
+    if(c&&c.lon>lon0&&c.lon<lon1&&c.lat>lat0&&c.lat<lat1)lab('fire',c.lat,c.lon,1.6,()=>t('fires_near',c.place[0]))});
+  const worst=[...ST].sort((a,b)=>(b.now||0)-(a.now||0)).slice(0,4);
+  const stl=worst.map(s=>({s,o:lab('st',s.lat,s.lon,0,null)}));
+  function relabel(){lbls.forEach(o=>{if(o.text)o.d.textContent=o.text()})}
+  relabel();
+
+  // camera: fly from the fires to Malaysia; dragging hands control to the viewer
+  const kf=(lo,la,dx,dy,dz)=>({t:new THREE.Vector3(X(lo),0,Z(la)),p:new THREE.Vector3(X(lo)+dx,dy,Z(la)+dz)});
+  const K=[kf(108.2,-1.2,0,175,165),kf(103.6,.6,12,74,100),kf(102.7,2.2,-62,48,62)];
+  const ease=u=>u<.5?4*u*u*u:1-Math.pow(-2*u+2,3)/2;
+  const tgt=new THREE.Vector3(),cp=new THREE.Vector3();
+  function camAt(p,clock){
+    let a,b,u;if(p<.6){a=K[0];b=K[1];u=ease(p/.6)}else if(p<.76){a=K[1];b=K[2];u=ease((p-.6)/.16)}else{a=K[2];b=K[2];u=0}
+    tgt.copy(a.t).lerp(b.t,u);cp.copy(a.p).lerp(b.p,u);
+    const ang=Math.sin(clock*.05)*.12;const dx=cp.x-tgt.x,dz=cp.z-tgt.z;     // a slow drift so the scene never sits still
+    cam.position.set(tgt.x+dx*Math.cos(ang)-dz*Math.sin(ang),cp.y,tgt.z+dx*Math.sin(ang)+dz*Math.cos(ang));ctl.target.copy(tgt);
+  }
+  camAt(0,0);ctl.update();
+
+  let lastCap='',lastHour=-1,w0=0,h0=0;
+  function resize(){const w=host.clientWidth,h=host.clientHeight;if(!w||!h)return;w0=w;h0=h;r.setSize(w,h,false);cam.aspect=w/h;
+    if(!isPhone()){const pw=Math.min(400,innerWidth-40);cam.setViewOffset(w,h,-pw/2,0,w,h)}else cam.clearViewOffset();cam.updateProjectionMatrix()}
+  const v=new THREE.Vector3(),clock=new THREE.Clock();
+  function frame(){
+    requestAnimationFrame(frame);
+    if(host.hidden)return;
+    if(host.clientWidth!==w0||host.clientHeight!==h0)resize();
+    const c=clock.getElapsedTime(),x=storyT,p=Math.min(1,Math.max(0,(x-TS)/(TE-TS)));
+    fu.uT.value=(x-TS)/HR;fu.uC.value=c;
+    const hour=Math.floor(x/HR);
+    if(hour!==lastHour){lastHour=hour;
+      updateSmoke(x);
+      let sum=0,cnt=0;
+      ST.forEach((s,i)=>{const a=apiAt(s,hour*HR),m=pillars[i];const hgt=a==null?.25:Math.max(.25,a*.05);m.scale.y=hgt;
+        const cc=a==null?new THREE.Color(0x555566):apiC[catOf(a)];m.material.color.copy(cc);
+        gp[i*3]=m.position.x;gp[i*3+1]=m.position.y+hgt;gp[i*3+2]=m.position.z;gc[i*3]=cc.r;gc[i*3+1]=cc.g;gc[i*3+2]=cc.b;if(a!=null){sum+=a;cnt++}});
+      gg2.attributes.position.needsUpdate=gg2.attributes.color.needsUpdate=true;
+      // the air itself: fog thickens and browns as Malaysia's average API climbs
+      const f=Math.min(1,Math.max(0,((cnt?sum/cnt:0)-50)/110));
+      bg.copy(night).lerp(hazeC,f);scene.fog.near=150-70*f;scene.fog.far=560-230*f;
+      stl.forEach(({s,o},i)=>{const a=apiAt(s,hour*HR);o.v.y=pillars[ST.indexOf(s)].position.y+(a==null?.25:Math.max(.25,a*.05))+.9;
+        o.d.innerHTML=`<span class="d" style="background:${apiCol(a)}"></span>${esc(s.area)}<b>${a??'–'}</b>`});
+      let ch,ti,me;
+      if(x<T0-36*HR){ch=1;ti=t('ch1');me=t('ch1m',fDay(x),fmtN(firesBefore(x)))}
+      else if(x<=T0){ch=2;ti=t('ch2');me=t('ch2m',fStamp(x),unhAt(x),ST.length)}
+      else{ch=3;ti=t('ch3');me=t('ch3m',fStamp(x),unhAt(x))}
+      const key=LANG+ch+me;if(key!==lastCap){lastCap=key;caption(`${t('ch')} ${ch} / 3`,ti,me)}
+    }
+    if(SC.cine)camAt(p,c);
+    ctl.update();r.render(scene,cam);
+    const hw=w0/2,hh=h0/2;
+    lbls.forEach(o=>{v.copy(o.v).project(cam);const vis=v.z<1&&v.x>-1.05&&v.x<1.05&&v.y>-1.05&&v.y<1.05;o.d.style.display=vis?'':'none';
+      if(vis)o.d.style.transform=`translate(${(v.x*hw+hw).toFixed(1)}px,${(-v.y*hh+hh).toFixed(1)}px) translate(-50%,-100%)`});
+  }
+  SC={TS,cine:true,resize,relabel:()=>{relabel();lastCap='';lastHour=-1}};
+  resize();frame();
+}
+
+// ---------- About
+RENDER.about=function(){
+  caption(t('deck_e'),t('reg_today'),t('deck_doe',fStamp(H.t_obs)));legendAPI();player(false);paintStations(s=>s.now);frame([[-0.6,99.3],[7.3,119.4]]);
+  const rng=['0–50','51–100','101–200','201–300','> 300'],ms=LANG==='ms';
+  const cats=t('cat').map((c,i)=>`<div class="cat-row"><span class="chip api"><span class="dot" style="background:var(--${APIV[i]})"></span>${c} · ${rng[i]}</span><span>${t('adv')[i]}</span></div>`).join('');
+  const b=s=>`<span style="font-weight:500">${s}.</span>`;
+  $('pbody').innerHTML=`<div class="about" style="display:flex;flex-direction:column;gap:12px">
+  <div class="lead"><div class="meta">${ms?'Info':'About'}</div><div class="sub" style="font-size:20px">${ms?'Tentang Jerebu Watch':'About Jerebu Watch'}</div></div>
+  <p>${ms?'Jerebu Watch menghubungkan kebakaran di Indonesia dengan kualiti udara di Malaysia: bacaan IPU terkini, ramalan 3 hari untuk setiap stesen JAS, dan kebakaran mana yang menghantar asap ke bandar anda.'
+    :'Jerebu Watch connects the fires in Indonesia to the air in Malaysia: the latest API readings, a 3-day forecast for every DOE station, and which fires are sending smoke to your town.'}</p>
+  <div class="callout amber"><div class="ct">${ic('alert')}${ms?'Bukan ramalan rasmi':'Not an official forecast'}</div>${ms?'Untuk bacaan dan amaran rasmi, rujuk':'For official readings and warnings, see'} <a href="https://eqms.doe.gov.my/APIMS/main" target="_blank" rel="noopener">DOE APIMS</a> ${ms?'dan ikut arahan pihak berkuasa.':'and follow your local authorities.'}</div>
+  <div class="card">${cardH('info','blue',ms?'Maksud nombor IPU':'What the API numbers mean',t('todo_src'))}<div>${cats}</div></div>
+  <div class="card">${cardH('chart','violet',ms?'Bagaimana ia berfungsi':'How it works','')}
+    <p>${b(ms?'Kebakaran':'Fires')} ${ms?'Satelit NASA (VIIRS) mengesan titik panas beberapa kali sehari. Titik panas berdekatan dikumpulkan menjadi kawasan kebakaran dan dinamakan mengikut bandar terdekat.':'NASA satellites (VIIRS) spot fire hotspots several times a day. Nearby hotspots are grouped into fire areas and named after the nearest town.'}</p>
+    <p>${b(ms?'Kualiti udara':'Air quality')} ${ms?'Bacaan IPU setiap jam dari 68 stesen JAS, 7 hari lepas.':'Hourly API readings from DOE\'s 68 stations, last 7 days.'}</p>
+    <p>${b(ms?'Ramalan':'Forecast')} ${ms?'Bermula dengan bacaan terkini setiap stesen, kemudian beransur-ansur mengikut ramalan asap Copernicus CAMS yang dilaraskan kepada bacaan stesen itu. Diuji pada data minggu lepas, ramalan 3 hari tersasar purata kira-kira 11 mata IPU.':'It starts from each station\'s latest reading, then gradually follows the Copernicus CAMS smoke forecast, tuned to that station\'s own readings. Tested on last week\'s data, the 3-day forecast was off by about 11 API points on average.'}</p>
+    <p>${b(ms?'Laluan asap':'Smoke paths')} ${ms?'Mengikut ramalan angin dari setiap kawasan kebakaran. Ia panduan, bukan model penuh.':'They follow the forecast wind from each fire area. A guide, not a full air-quality model.'}</p>
+    ${D.briefing?`<p>${b(ms?'Ringkasan AI':'AI briefing')} ${ms?'Ditulis oleh DeepSeek semasa halaman dibina, hanya daripada angka di halaman ini. Ringkasan yang menyebut angka lain ditolak.':'Written by DeepSeek when the page is built, from the numbers on this page only. A briefing that mentions any other number is rejected.'}</p>`:''}</div>
+  <div class="card">${cardH('list','blue',ms?'Sumber data':'Data sources','')}<ul>
+    <li>NASA FIRMS, VIIRS (NOAA-20, NOAA-21, S-NPP)</li><li>${ms?'Jabatan Alam Sekitar Malaysia, APIMS':'Department of Environment Malaysia, APIMS'}</li><li>Copernicus CAMS PM2.5 ${ms?'melalui':'via'} Open-Meteo</li><li>${ms?'Ramalan angin melalui Open-Meteo':'Wind forecast via Open-Meteo'}</li><li>Natural Earth, AWS Terrain Tiles</li></ul>
+    <p class="note">${ms?'Data dikemas kini':'Data updated'} ${fStamp(D.generated)} MYT.</p></div>
+  <div class="card">${cardH('share','violet',ms?'Kongsi':'Share',ms?'Teks untuk media sosial':'Text for social media')}<pre class="sum" id="sumText">${esc(summaryText())}</pre></div></div>`;
+};
+
+// ======================================================= share text
+function summaryText(){
+  const M=nationModel(),n=M.unh.length,w=M.worst.slice(0,3).map(s=>`${s.area} ${s.now}`),d=M.days.map(unhOf),p=listJoin(M.provs.map(g=>prov(g.pl)));
+  if(LANG==='ms')return `Jerebu: ${n} daripada ${ST.length} kawasan di Malaysia mencatat udara TIDAK SIHAT (IPU, ${fStamp(H.t_obs)}).
+Paling teruk: ${w.join(', ')}.
+3 hari akan datang: ${d[0]} / ${d[1]} / ${d[2]} kawasan dijangka tidak sihat.
+Punca utama asap: kebakaran di ${p}, Indonesia.
+Pakai pelitup muka di luar, kurangkan aktiviti luar, minum banyak air.
+Ramalan tidak rasmi. Bacaan rasmi: APIMS JAS.
+#jerebu #IPU #haze #Malaysia`;
+  return `Haze: ${n} of ${ST.length} areas in Malaysia have UNHEALTHY air (API, ${fStamp(H.t_obs)}).
+Worst: ${w.join(', ')}.
+Next 3 days: ${d[0]} / ${d[1]} / ${d[2]} areas expected unhealthy.
+Main smoke source: fires in ${p}, Indonesia.
+Wear a mask outdoors, cut down outdoor activity, drink plenty of water.
+Unofficial forecast. Official readings: DOE APIMS.
+#jerebu #haze #IPU #Malaysia`;
+}
+function toast(m){const el=document.createElement('div');el.className='toast';el.setAttribute('role','status');el.textContent=m;document.body.appendChild(el);setTimeout(()=>el.remove(),2800)}
+$('shareBtn').onclick=()=>{const txt=summaryText();
+  const fail=()=>{setMode('about');const pre=$('sumText');if(pre){const r=document.createRange();r.selectNodeContents(pre);const s=getSelection();s.removeAllRanges();s.addRange(r);pre.scrollIntoView({block:'center'})}toast(t('copy_fail'))};
+  try{navigator.clipboard.writeText(txt).then(()=>toast(t('copied')),fail)}catch(e){fail()}};
+
+// ======================================================= theme, language, boot
+const darkNow=()=>{const a=document.documentElement.getAttribute('data-theme');return a?a==='dark':matchMedia('(prefers-color-scheme: dark)').matches};
+function paintChrome(){
+  document.documentElement.lang=LANG;
+  document.querySelectorAll('[data-i]').forEach(e=>{const v=t(e.dataset.i);if(typeof v==='string')e.textContent=v});
+  $('langBtn').querySelector('.lbl').textContent=LANG==='ms'?'EN':'BM';
+  $('langBtn').setAttribute('aria-label',LANG==='ms'?'Switch to English':'Tukar ke Bahasa Melayu');
+  $('shareBtn').setAttribute('aria-label',t('share'));
+  $('barCtx').textContent=t('bar_ctx',fStamp(H.t_obs));
+  $('storyHint').textContent=t('drag');segLabels();if(SC)SC.relabel();
+  const d=darkNow();$('themeBtn').innerHTML=ic(d?'sun':'moon');$('themeBtn').setAttribute('aria-label',d?t('theme_light'):t('theme_dark'));
+}
+$('langBtn').onclick=()=>{LANG=LANG==='ms'?'en':'ms';try{localStorage.setItem('jw-lang',LANG)}catch(e){}paintChrome();RENDER[mode]({focus:mode==='fires'})};
+$('themeBtn').onclick=()=>{const next=darkNow()?'light':'dark';document.documentElement.setAttribute('data-theme',next);try{localStorage.setItem('jw-theme',next)}catch(e){}};
+try{const th=localStorage.getItem('jw-theme');if(th==='dark'||th==='light')document.documentElement.setAttribute('data-theme',th)}catch(e){}
+function onTheme(){restyleLand();paintChrome();if(F)tiles.forEach(drawTile);if(mode==='smoke'){srcMk.forEach(m=>m.setStyle({fillColor:tok('fire-mid')}));drawSmoke(smokeX)}
+  if(mode==='area')backLayer.eachLayer(l=>l.setStyle({color:tok('back')}));if(R3&&!$('three').hidden)build3D(selFire)}
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',onTheme);
+new MutationObserver(onTheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+addEventListener('resize',()=>{map.invalidateSize();if(SC)SC.resize()});
+
+paintChrome();
+const startMode=(location.hash||'').slice(1);let savedMode=null;try{savedMode=localStorage.getItem('jw-mode')}catch(e){}
+setMode(MODES.includes(startMode)?startMode:(MODES.includes(savedMode)?savedMode:'today'),{keepScroll:true});
+</script>
