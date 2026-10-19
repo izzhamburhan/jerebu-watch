@@ -43,6 +43,8 @@
   --fire-old:#c0502e; --plume:#ffa66e; --wind:#6f7890; --back:#6aa6ff; --float-shadow:0 24px 60px -28px rgba(0,0,0,.9);
   color-scheme:dark}
 
+/* colour-blind-safe API scale (Okabe-Ito based); numbers are always printed on the markers too */
+:root[data-cb="1"]{--api-good:#56b4e9;--api-mod:#009e73;--api-unh:#f0e442;--api-vunh:#d55e00;--api-haz:#882255}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{background:var(--background);color:var(--foreground);font:14px/1.5 var(--font-sans);-webkit-font-smoothing:antialiased}
@@ -289,6 +291,7 @@ pre.sum{white-space:pre-wrap;margin:0;font:12px/1.55 var(--font-mono);background
     <span class="ctx" id="barCtx"></span>
     <span class="spacer"></span>
     <button class="btn ghost sm" id="langBtn"><svg class="i" viewBox="0 0 24 24"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg><span class="lbl"></span></button>
+    <button class="btn ghost icon" id="cbBtn" aria-pressed="false"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
     <button class="btn ghost icon" id="themeBtn"></button>
     <button class="btn sm" id="shareBtn"><svg class="i" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><span class="lbl-long" data-i="share"></span></button>
   </header>
@@ -377,6 +380,10 @@ en:{
  burnt:'Burnt area so far',burnt_sub:'km², grows as new hotspots appear',
  daily:'Hotspots per day',daily_sub:'By island',biggest:'Largest fire areas this week',hotspots:'hotspots',other:'Other',
  view_map:'Map',view_3d:'3D terrain',no3d:'3D terrain is ready for the 6 largest fire areas.',near_town:(tw,p)=>`Near ${tw}, ${p}`,
+ cb_on:'Colour-blind friendly colours: on',cb_off:'Colour-blind friendly colours: off',updated_ago:h=>h<1?'Updated just now':`Updated ${h} h ago`,
+ alert_t:'Haze alert',alert_b:(n,l)=>`${n} ${n===1?'area is':'areas are'} at or forecast to reach Very unhealthy (API above 200): ${l}.`,
+ ease_t:'When will it ease?',ease_none:'Still expected to be Unhealthy at the end of the 3-day forecast, so no easing date yet.',ease_ok:'Already below Unhealthy, and not expected to rise above it.',ease_by:d=>`Expected to drop below Unhealthy by ${d} MYT, then stay below.`,ease_note:'Forecast only. Smoke can come back if winds shift.',
+ mask_t:'Choose the right mask',mask_b:'An N95 or KN95 mask that seals snugly around your nose and cheeks filters fine haze particles. Cloth and surgical masks do not. Children and people with heart or lung conditions should check with a doctor first.',
  view_story:'3D story',ch:'Chapter',ch1:'Fires spread across Sumatra and Borneo',ch2:'Haze settles over Malaysia',ch3:'The next 3 days',
  ch1m:(d,n)=>`${d} · ${n} hotspots so far`,ch2m:(d,n,tot)=>`${d} MYT · ${n} of ${tot} areas unhealthy`,ch3m:(d,n)=>`${d} MYT · forecast · ${n} areas unhealthy`,
  lg_pillar:'Light pillar: API at a DOE station',lg_ember:'Fire hotspot, brightest in the last 12 h',lg_smoke:'Smoke drifting on the wind',
@@ -429,6 +436,10 @@ ms:{
  burnt:'Kawasan terbakar setakat ini',burnt_sub:'km², bertambah apabila titik panas baharu muncul',
  daily:'Titik panas sehari',daily_sub:'Mengikut pulau',biggest:'Kawasan kebakaran terbesar minggu ini',hotspots:'titik panas',other:'Lain-lain',
  view_map:'Peta',view_3d:'Rupa bumi 3D',no3d:'Rupa bumi 3D tersedia untuk 6 kawasan kebakaran terbesar.',near_town:(tw,p)=>`Berhampiran ${tw}, ${p}`,
+ cb_on:'Warna mesra buta warna: hidup',cb_off:'Warna mesra buta warna: mati',updated_ago:h=>h<1?'Baru dikemas kini':`Dikemas kini ${h} jam lalu`,
+ alert_t:'Amaran jerebu',alert_b:(n,l)=>`${n} kawasan berada atau dijangka mencapai Sangat tidak sihat (IPU melebihi 200): ${l}.`,
+ ease_t:'Bila akan reda?',ease_none:'Masih dijangka Tidak sihat pada penghujung ramalan 3 hari, jadi belum ada tarikh reda.',ease_ok:'Sudah di bawah Tidak sihat dan tidak dijangka naik melebihinya.',ease_by:d=>`Dijangka turun di bawah Tidak sihat menjelang ${d} MYT, kemudian kekal di bawah.`,ease_note:'Ramalan sahaja. Asap boleh kembali jika angin berubah.',
+ mask_t:'Pilih pelitup muka yang betul',mask_b:'Pelitup N95 atau KN95 yang melekap kemas pada hidung dan pipi menapis zarah halus jerebu. Pelitup kain dan pelitup pembedahan tidak. Kanak-kanak dan mereka yang ada masalah jantung atau paru-paru patut berjumpa doktor dahulu.',
  view_story:'Cerita 3D',ch:'Bab',ch1:'Kebakaran merebak di Sumatera dan Borneo',ch2:'Jerebu menyelubungi Malaysia',ch3:'3 hari akan datang',
  ch1m:(d,n)=>`${d} · ${n} titik panas setakat ini`,ch2m:(d,n,tot)=>`${d} MYT · ${n} daripada ${tot} kawasan tidak sihat`,ch3m:(d,n)=>`${d} MYT · ramalan · ${n} kawasan tidak sihat`,
  lg_pillar:'Tiang cahaya: IPU di stesen JAS',lg_ember:'Titik panas, paling terang dalam 12 jam lepas',lg_smoke:'Asap dibawa angin',
@@ -505,6 +516,11 @@ H.stations.forEach(s=>{
     for(const [x,v] of s.fcMap)if(x>=a&&x<b&&(pk==null||v>pk))pk=v;
     return {start:a,peak:pk}});
   let p=null;for(const [x,v] of s.fcMap)if(x<=T0+72*HR&&(p==null||v>p))p=v;s.pk72=p;
+  const fx=[...s.fcMap.keys()].filter(x=>x<=T0+72*HR).sort((a,b)=>a-b);s.fcEnd=fx.length?fx.at(-1):T0;
+  const curUnh=(s.now||0)>100,futUnh=fx.some(x=>s.fcMap.get(x)>100);
+  if(!curUnh&&!futUnh)s.ease={k:'ok'};
+  else{let last=-1;fx.forEach((x,i)=>{if(s.fcMap.get(x)>100)last=i});
+    s.ease=(last>=0&&last<fx.length-1)?{k:'by',at:fx[last+1]}:(last<0?{k:'by',at:fx[0]}:{k:'none'})}
 });
 const ST=H.stations;
 const stateOf=s=>s.state.replace(/^WP /,'W.P. ');
@@ -680,6 +696,8 @@ RENDER.today=function(){
   if(M.provs.length)lede.push(t('lede_src',listJoin(M.provs.map(g=>prov(g.pl)))));
   const typical=[...ST].map(s=>s.now||0).sort((a,b)=>a-b)[Math.floor(ST.length*.75)],ci=catOf(typical);
   $('pbody').innerHTML=`
+  ${(()=>{const hi=[...ST].filter(s=>Math.max(s.now||0,s.pk72||0)>200).sort((a,b)=>Math.max(b.now||0,b.pk72||0)-Math.max(a.now||0,a.pk72||0));
+    return hi.length?`<div class="callout red"><div class="ct">${ic('alert')}${t('alert_t')}</div>${t('alert_b',hi.length,hi.slice(0,5).map(s=>`${s.area} (${Math.max(s.now||0,s.pk72||0)})`).join(', '))}</div>`:''})()}
   <div class="lead"><div class="meta">${t('reading',fStamp(H.t_obs))}</div>
     <div class="big num">${n}</div><div class="sub">${n?t('hero_sub',n,ST.length):t('hero_ok')}</div></div>
   <div class="card">${cardH(br?'spark':'text',br?'violet':'blue',t('brief'),'',br?`<span class="chip violet">${t('brief_ai')}</span>`:'')}
@@ -733,6 +751,9 @@ RENDER.area=function(){
       <div class="lbl">${t('cat').map((c,i)=>`<span><b>${c}</b>${['0–50','51–100','101–200','201–300','300+'][i]}</span>`).join('')}</div></div></div>
   <div class="callout ${ci>=3?'red':ci>=2?'amber':'info'}"><div class="ct">${ic(ci>=2?'alert':'check')}${t('todo')} · ${t('cat')[ci]}</div>${t('adv')[ci]}
     ${ci>=2?`<ul>${t('tips').slice(0,4).map(x=>`<li>${x}</li>`).join('')}</ul>`:''}</div>
+  <div class="card">${cardH('cal','green',t('ease_t'),'')}
+    <p class="body">${s.ease.k==='ok'?t('ease_ok'):s.ease.k==='none'?t('ease_none'):t('ease_by',fStamp(s.ease.at))}</p><p class="note">${t('ease_note')}</p></div>
+  ${ci>=2?`<div class="card">${cardH('info','blue',t('mask_t'),'')}<p class="body">${t('mask_b')}</p></div>`:''}
   <div class="card">${cardH('cal','amber',t('here3'),t('peak'))}
     <div class="stats">${s.days.map((d,k)=>`<div class="stat"><div class="k">${k===0?t('today'):k===1?t('tomorrow'):fWeekday(d.start+12*HR)}</div><div class="v" style="color:${d.peak>100?'var(--amber)':'var(--foreground)'}">${d.peak??'–'}</div><div class="s">${d.peak!=null?t('cat')[catOf(d.peak)]:''}</div></div>`).join('')}</div></div>
   <div class="card">${cardH('chart','violet',t('chart_t'),t('chart_sub'))}
@@ -1017,7 +1038,7 @@ function storyInit(){
       updateSmoke(x);
       let sum=0,cnt=0;
       ST.forEach((s,i)=>{const a=apiAt(s,hour*HR),m=pillars[i];const hgt=a==null?.25:Math.max(.25,a*.05);m.scale.y=hgt;
-        const cc=a==null?new THREE.Color(0x555566):apiC[catOf(a)];m.material.color.copy(cc);
+        const cc=a==null?new THREE.Color(0x555566):new THREE.Color(tok(APIV[catOf(a)]));m.material.color.copy(cc);
         gp[i*3]=m.position.x;gp[i*3+1]=m.position.y+hgt;gp[i*3+2]=m.position.z;gc[i*3]=cc.r;gc[i*3+1]=cc.g;gc[i*3+2]=cc.b;if(a!=null){sum+=a;cnt++}});
       gg2.attributes.position.needsUpdate=gg2.attributes.color.needsUpdate=true;
       // the air itself: fog thickens and browns as Malaysia's average API climbs
@@ -1034,8 +1055,13 @@ function storyInit(){
     if(SC.cine)camAt(p,c);
     ctl.update();r.render(scene,cam);
     const hw=w0/2,hh=h0/2;
-    lbls.forEach(o=>{v.copy(o.v).project(cam);const vis=v.z<1&&v.x>-1.05&&v.x<1.05&&v.y>-1.05&&v.y<1.05;o.d.style.display=vis?'':'none';
-      if(vis)o.d.style.transform=`translate(${(v.x*hw+hw).toFixed(1)}px,${(-v.y*hh+hh).toFixed(1)}px) translate(-50%,-100%)`});
+    const placed=[];
+    lbls.slice().sort((a,b)=>(a.d.classList.contains('st')?0:1)-(b.d.classList.contains('st')?0:1)).forEach(o=>{v.copy(o.v).project(cam);
+      const vis=v.z<1&&v.x>-1.05&&v.x<1.05&&v.y>-1.05&&v.y<1.05;let px=v.x*hw+hw,py=-v.y*hh+hh;
+      if(vis){const wd=o.d.offsetWidth||80;for(let k=0;k<6;k++){const hit=placed.find(q=>Math.abs(q[0]-px)<(q[2]+wd)/2+4&&Math.abs(q[1]-py)<15);if(!hit)break;py=hit[1]-16}
+        placed.push([px,py,wd])}
+      o.d.style.display=vis?'':'none';
+      if(vis)o.d.style.transform=`translate(${px.toFixed(1)}px,${py.toFixed(1)}px) translate(-50%,-100%)`});
   }
   SC={TS,cine:true,resize,relabel:()=>{relabel();lastCap='';lastHour=-1}};
   resize();frame();
@@ -1096,17 +1122,21 @@ function paintChrome(){
   $('langBtn').querySelector('.lbl').textContent=LANG==='ms'?'EN':'BM';
   $('langBtn').setAttribute('aria-label',LANG==='ms'?'Switch to English':'Tukar ke Bahasa Melayu');
   $('shareBtn').setAttribute('aria-label',t('share'));
-  $('barCtx').textContent=t('bar_ctx',fStamp(H.t_obs));
+  const ago=Math.max(0,Math.floor((Date.now()/1000-D.generated)/HR));
+  $('barCtx').textContent=`${t('bar_ctx',fStamp(H.t_obs))} · ${t('updated_ago',ago)}`;
+  const cb=document.documentElement.getAttribute('data-cb')==='1';$('cbBtn').setAttribute('aria-pressed',cb);$('cbBtn').setAttribute('aria-label',t(cb?'cb_on':'cb_off'));$('cbBtn').title=t(cb?'cb_on':'cb_off');
   $('storyHint').textContent=t('drag');segLabels();if(SC)SC.relabel();
   const d=darkNow();$('themeBtn').innerHTML=ic(d?'sun':'moon');$('themeBtn').setAttribute('aria-label',d?t('theme_light'):t('theme_dark'));
 }
 $('langBtn').onclick=()=>{LANG=LANG==='ms'?'en':'ms';try{localStorage.setItem('jw-lang',LANG)}catch(e){}paintChrome();RENDER[mode]({focus:mode==='fires'})};
+$('cbBtn').onclick=()=>{const on=document.documentElement.getAttribute('data-cb')!=='1';document.documentElement.setAttribute('data-cb',on?'1':'0');try{localStorage.setItem('jw-cb',on?'1':'0')}catch(e){}};
+try{if(localStorage.getItem('jw-cb')==='1')document.documentElement.setAttribute('data-cb','1')}catch(e){}
 $('themeBtn').onclick=()=>{const next=darkNow()?'light':'dark';document.documentElement.setAttribute('data-theme',next);try{localStorage.setItem('jw-theme',next)}catch(e){}};
 try{const th=localStorage.getItem('jw-theme');if(th==='dark'||th==='light')document.documentElement.setAttribute('data-theme',th)}catch(e){}
-function onTheme(){restyleLand();paintChrome();if(F)tiles.forEach(drawTile);if(mode==='smoke'){srcMk.forEach(m=>m.setStyle({fillColor:tok('fire-mid')}));drawSmoke(smokeX)}
+function onTheme(){restyleLand();paintChrome();if(SC)SC.relabel();if(mode==='today'||mode==='area'||mode==='about')RENDER[mode]({keepScroll:true});else paintStations();if(F)tiles.forEach(drawTile);if(mode==='smoke'){srcMk.forEach(m=>m.setStyle({fillColor:tok('fire-mid')}));drawSmoke(smokeX)}
   if(mode==='area')backLayer.eachLayer(l=>l.setStyle({color:tok('back')}));if(R3&&!$('three').hidden)build3D(selFire)}
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',onTheme);
-new MutationObserver(onTheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+new MutationObserver(onTheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme','data-cb']});
 addEventListener('resize',()=>{map.invalidateSize();if(SC)SC.resize()});
 
 paintChrome();
