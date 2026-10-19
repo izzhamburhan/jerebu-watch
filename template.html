@@ -531,6 +531,7 @@ function restyleLand(){const k={my:tok('land-my'),id:tok('land-id'),x:tok('land'
 restyleLand();
 [['Malaysia',4.75,102.25,1],['Indonesia',-1.35,102.5,1],['Kuala Lumpur',3.14,101.95],['Johor Bahru',1.62,103.95],['Kuching',1.2,110.45],['Kota Kinabalu',5.75,116.3],
  ['Pekanbaru',0.5,101.6],['Jambi',-1.6,103.75],['Palembang',-3.0,104.9],['Pontianak',-0.05,109.5],['Palangka Raya',-2.2,114.1],['Medan',3.6,98.8]]
+ ['Pekanbaru',0.5,101.6],['Jambi',-1.6,103.75],['Palembang',-3.0,104.9],['Pontianak',-0.05,109.5],['Palangka Raya',-2.2,114.1],['Medan',3.6,98.8],['Jakarta',-6.2,106.85]]
  .forEach(([n,la,lo,c])=>L.marker([la,lo],{interactive:false,keyboard:false,icon:L.divIcon({className:'plabel'+(c?' country':''),html:n,iconSize:null})}).addTo(map));
 
 // stations
@@ -981,6 +982,7 @@ function storyInit(){
   const lab=(cls,la,lo,dy,text)=>{const d=document.createElement('div');d.className='slbl '+cls;host.appendChild(d);const o={d,v:new THREE.Vector3(X(lo),yAt(la,lo)+dy,Z(la)),text};lbls.push(o);return o};
   [['Kuala Lumpur',3.14,101.69],['Johor Bahru',1.49,103.74],['Singapore',1.29,103.85],['Kuching',1.55,110.35],['Kota Kinabalu',5.98,116.07],
    ['Pekanbaru',.51,101.45],['Palembang',-2.98,104.76],['Pontianak',-.03,109.33],['Palangka Raya',-2.21,113.92],['Medan',3.59,98.67]]
+   ['Pekanbaru',.51,101.45],['Palembang',-2.98,104.76],['Pontianak',-.03,109.33],['Palangka Raya',-2.21,113.92],['Medan',3.59,98.67],['Jakarta',-6.2,106.85]]
    .forEach(([n,la,lo])=>lab('',la,lo,.9,()=>n));
   byProvince(H.priority).slice(0,3).forEach(gr=>{const c=[...D.complexes].sort((a,b)=>b.frp-a.frp).find(c=>c.place[1]===gr.pl[1]);
     if(c&&c.lon>lon0&&c.lon<lon1&&c.lat>lat0&&c.lat<lat1)lab('fire',c.lat,c.lon,1.6,()=>t('fires_near',c.place[0]))});
